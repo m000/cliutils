@@ -78,30 +78,34 @@ function analyze() {
     rm "$fifo_fr" "$fifo_bd"
 }
 
-function find_next_iframe() {
+function next_iframe() {
+    # returns the position of the next iframe after the specified time
     local t_start="$1"
-
-    # jqfilter which returns the offset of the first iframe after the specified time
     local jqfilter='[.frames[] | select(.key_frame == 1) | .pkt_dts_time | tonumber | select(.>=%f)] | min'
     $JQ -r "$(printf "$jqfilter" "$t_start")" < "$FR_CACHE"
+}
 
-    # # Use jq to get iframes offsets.
-    # t_start=0
-    # t_end=0
-    # $JQ -r '.frames[] | select(.key_frame == 1) | .pkt_dts_time | tonumber ' < "$FR_CACHE" | while read t; do
-    #     t_start="$t_end"
-    #     t_end="$t"
-    #     [[ "$t_start" == 0 ]] && continue
-    #     dt=$(echo "($t_end-$t_start)" | bc -l)
-    #     outfile="${f%.*}.$((sc++)).${f##*.}"
-    #     [ -f "$outfile" ] && $RM "$outfile"
-    #     echo "t_start=$t_start" "dt=$dt" "t_end=$t_end"
+function video_bitrate() {
+    local t_start="$1"
 
-    #     # Prepend zeros to $t_start, $dt. ffmpeg won't parse floats in .12345 format.
-    #     echo $FFMPEG -ss "0$t_start" -i "$f" -t "0$dt" -acodec copy -vcodec copy "$outfile"</dev/null
-    #     [ $sc -gt 10 ] && exit
-    # done
-    # exit
+    # jqfilter which calculates the average video bitrate (bytes/sec) by dividing the sum
+    # of pkt_size of individual frames with the sum of their pkt_duration_time
+    local jqfilter='reduce (
+        .frames[] |
+        {pkt_size, pkt_duration_time} |
+        with_entries(.value |= tonumber)
+    ) as $i (
+        {"time":0, "size":0};
+        {
+            "time": (.time+$i["pkt_duration_time"]),
+            "size": (.size+$i["pkt_size"])
+        }
+    ) | .time as $t | .size | ./$t'
+    $JQ -r "$jqfilter" < "$FR_CACHE"
+
+
+    # | tonumber | select(.>=%f)] | min'
+    # $JQ -r "$(printf "$jqfilter" "$t_start")" < "$FR_CACHE"
 }
 
 function get_encoding_params() {
@@ -165,10 +169,15 @@ for f in "$@"; do
 		[ -f "$outfile" ] && $RM "$outfile"
 
 		echo "--------------------------------"
-        t_middle=$(find_next_iframe "$t_start")
+        t_middle=$(next_iframe "$t_start")
         dt1=$(echo "($t_middle-$t_start)" | bc -l)
         dt2=$(echo "($t_end-$t_middle)" | bc -l)
 
+        # need to find previous and next iframe and calculate bitrate between them
+        # iframes are much larger than the other frames so they have to be included in the 
+        # calculation in order for it to be accurate
+        video_bitrate
+        exit
 
         get_encoding_params 
 
