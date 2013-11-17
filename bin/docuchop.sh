@@ -78,43 +78,92 @@ function analyze() {
     rm "$fifo_fr" "$fifo_bd"
 }
 
-function next_iframe() {
-    # returns the position of the next iframe after the specified time
+function prev_next_iframes() {
+    # parses "$FR_CACHE" and returns the position of the first iframes before and after the specified time
     local t_start="$1"
-    local jqfilter='[.frames[] | select(.key_frame == 1) | .pkt_dts_time | tonumber | select(.>=%f)] | min'
-    $JQ -r "$(printf "$jqfilter" "$t_start")" < "$FR_CACHE"
+    local jqfilter='reduce (
+        .frames[] |
+        select(.key_frame == 1) |
+        .pkt_dts_time |
+        tonumber
+    ) as $i (
+        {"before":0, "after":0};
+        {
+            "before": (if $i <= %f then $i else .before end),
+            "after": (if .after < %f and $i >= %f then $i else .after end)
+        }
+    ) | [.[]] | sort | .[]'
+    # "$t_start" is used 3 times in the filter!
+    $JQ -r "$(printf "$jqfilter" "$t_start" "$t_start" "$t_start")" < "$FR_CACHE"
 }
 
 function video_bitrate() {
+    # jqfilter that calculates the average video bitrate (kbit/sec) between the defined times.
+    # To do so, it uses reduce to calculate the sum of pkt_size and pkt_duration_time
+    # of individual frames and then divides the two values.
+    #
+    # Notes:
+    #   In order to avoid warnings, we have to filter out frames without a pkt_dts_time.
+    #   In our experience this is only the last frame. 
+    #   The defined times should correspond to iframes, otherwise the calculation will be
+    #   inaccurate if dt=O(sec).
     local t_start="$1"
+    local t_end="$2"
 
-    # jqfilter which calculates the average video bitrate (bytes/sec) by dividing the sum
-    # of pkt_size of individual frames with the sum of their pkt_duration_time
     local jqfilter='reduce (
         .frames[] |
-        {pkt_size, pkt_duration_time} |
-        with_entries(.value |= tonumber)
+        select(.pkt_dts_time != null) |
+        {pkt_size, pkt_duration_time, pkt_dts_time} |
+        with_entries(.value |= tonumber) |
+        select(.pkt_dts_time>=%f and .pkt_dts_time<%f) |
+        {pkt_size, pkt_duration_time}
     ) as $i (
         {"time":0, "size":0};
         {
             "time": (.time+$i["pkt_duration_time"]),
             "size": (.size+$i["pkt_size"])
         }
-    ) | .time as $t | .size | ./$t'
-    $JQ -r "$jqfilter" < "$FR_CACHE"
+    ) | .time as $t | .size | (8*(./$t))/1024'
+    local br=$($JQ -r "$(printf "$jqfilter" "$t_start" "$t_end")" < "$FR_CACHE")
 
-
-    # | tonumber | select(.>=%f)] | min'
-    # $JQ -r "$(printf "$jqfilter" "$t_start")" < "$FR_CACHE"
+    # round result to an int
+    echo "$br/1" | bc
 }
 
-function get_encoding_params() {
-    $JQ '.streams[] | select(.codec_type == "audio")' < "$ST_CACHE"
-    $JQ '.streams[] | select(.codec_type == "video")' < "$ST_CACHE"
+function encoding_options() {
+    local brv="$1"
 
-    # codec_name
+    # Dump info for debugging.
+    # $JQ '.streams[] | select(.codec_type == "audio")' < "$ST_CACHE"
+    # $JQ '.streams[] | select(.codec_type == "video")' < "$ST_CACHE"
+
+    # echo -n "-c:a copy "
+    local jqfilter='.streams[] | select(.codec_type == "audio") |
+        "-c:a \(.codec_name) -b:a 64000"
+    '
+    # Create ffmpeg options for encoding video.
+    # Automatic mapping from stream info to encoding options is not always possible*.
+    # For this, we first set any custom options and then append them to the options that
+    # can be set automatically (i.e. without manual processing).
+    #
+    # * The problem is also described here: https://trac.ffmpeg.org/ticket/2901
+    #   XVID mappings: http://permalink.gmane.org/gmane.comp.video.ffmpeg.user/12241
+    local jqfilter='.streams[] | select(.codec_type == "video") |
+        (if .codec_tag_string == "XVID" then
+            (if .profile == "Advanced Simple Profile" then
+                "-profile:v 15 -preset slow"
+            else
+                ""
+            end)
+        else
+            ""
+        end) as $custom |
+        "-c:v \(.codec_name) -tag:v \(.codec_tag_string) -bf:v \(.has_b_frames) -level:v \(.level) \($custom) -b:v %s"
+    '
+    $JQ -r "$(printf "$jqfilter" "$brv")" < "$ST_CACHE"
+
+    # -c:v mpeg4 -tag:v XVID -profile:v 15  -preset slow "$outfile"</dev/null
     # level
-    # tag
 }
 
 for f in "$@"; do
@@ -123,24 +172,6 @@ for f in "$@"; do
 
     # Reset scene counter.
     sc=1
-
-    # Use jq to get iframes offsets.
-    # t_start=0
-    # t_end=0
-    # $JQ -r '.frames[] | select(.key_frame == 1) | .pkt_dts_time | tonumber ' < "$FR_CACHE" | while read t; do
-    #     t_start="$t_end"
-    #     t_end="$t"
-    #     [[ "$t_start" == 0 ]] && continue
-    #     dt=$(echo "($t_end-$t_start)" | bc -l)
-    #     outfile="${f%.*}.$((sc++)).${f##*.}"
-    #     [ -f "$outfile" ] && $RM "$outfile"
-    #     echo "t_start=$t_start" "dt=$dt" "t_end=$t_end"
-
-    #     # Prepend zeros to $t_start, $dt. ffmpeg won't parse floats in .12345 format.
-    #     echo $FFMPEG -ss "0$t_start" -i "$f" -t "0$dt" -acodec copy -vcodec copy "$outfile"</dev/null
-    #     [ $sc -gt 10 ] && exit
-    # done
-    # exit
 
     # Loop on scenes using the detected black scenes.
     # Black scene line format:
@@ -164,32 +195,45 @@ for f in "$@"; do
     		t_end="$black_start"
     	fi
 
-    	# Construct outfile & remove old outfile.
-		outfile="${f%.*}.$((sc++)).${f##*.}"
+        # Construct outfiles & remove old outfiles.
+        outfile_1="${f%.*}_1.$((sc)).${f##*.}"
+        outfile_2="${f%.*}_2.$((sc)).${f##*.}"
+        outfile="${f%.*}.$((sc)).${f##*.}"
 		[ -f "$outfile" ] && $RM "$outfile"
+        [ -f "$outfile_1" ] && $RM "$outfile_1"
+        [ -f "$outfile_2" ] && $RM "$outfile_2"
 
 		echo "--------------------------------"
-        t_middle=$(next_iframe "$t_start")
-        dt1=$(echo "($t_middle-$t_start)" | bc -l)
-        dt2=$(echo "($t_end-$t_middle)" | bc -l)
+        echo "Processing scene $((sc++))..."
+        # Find the iframes before and after the starting time.
+        read prev_iframe next_iframe <<< $(prev_next_iframes "$t_start")
 
-        # need to find previous and next iframe and calculate bitrate between them
-        # iframes are much larger than the other frames so they have to be included in the 
-        # calculation in order for it to be accurate
-        video_bitrate
-        exit
+        # Calculate times. Fix values<1 to start with 0 or ffmpeg will not be able to parse them.
+        t_middle="$next_iframe"
+        dt1=$(echo "dt=($t_middle-$t_start); if (dt>=0 && dt<1) {print 0}; print dt;" | bc -l)
+        dt2=$(echo "dt=($t_end-$t_middle); if (dt>=0 && dt<1) {print 0}; print dt;" | bc -l)
 
-        get_encoding_params 
+        # Calculate bitrate for the part that has to be reencoded.
+        reencode_bitrate=$(video_bitrate "$prev_iframe" "$next_iframe")
 
-		# Process. Put the -ss argument after the -i argument. Slower but supposedly more accurate.
-		# Apparently ffmpeg also reads chars from stdin. Use /dev/null as stdin or suffer! 
-		# http://ubuntuforums.org/showthread.php?t=1582957
+        # Calculate ffmpeg options for the part that has to be reencoded.
+        reencode_options=$(encoding_options "$reencode_bitrate"k)
+        # -c:a copy -c:v mpeg4 -tag:v XVID -profile:v 15 -level:v 5 -preset slow
+
+		# Process.
+        # Notes:
+        #   Use -ss as an input argument (before -i). Otherwise a few seconds may be lost from the begining of the video.
+        #   Always use /dev/null as the stdin of ffmpeg! Otherwise ffmpeg reads chars from stdin and gets confused.
         echo "t_start=$t_start" "t_middle=$t_middle" "t_end=$t_end"
-        echo $FFMPEG -ss "$t_start"  -i "$f" -t "$dt1" -c:a copy -c:v mpeg4 -tag:v XVID -profile:v 15 -level:v 5 -preset slow "$outfile"</dev/null
-    	echo $FFMPEG -ss "$t_middle" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile"</dev/null
-        echo $FFMPEG -i concat:'z1.m.1.avi|z2.m.1.avi' -c copy foo.avi
-    	# mencoder -ss "$t_start"  -endpos "$t_end" -oac copy -ovc copy "$f" -o "$outfile"</dev/null
-        # iframe_probe "$f"
-        exit 
+        $FFMPEG -ss "$t_start"  -i "$f" -t "$dt1" $reencode_options "$outfile_1"</dev/null
+        $FFMPEG -ss "$t_middle" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile_2"</dev/null
+
+        # Use concat demuxer to join files.
+        # http://stackoverflow.com/a/15186625/277172
+        # http://ffmpeg.org/trac/ffmpeg/wiki/How%20to%20concatenate%20%28join,%20merge%29%20media%20files#demuxer
+        printf "file '%s'\nfile '%s'\n" "$outfile_1" "$outfile_2" > cc$$.txt
+        $FFMPEG -f concat -i cc$$.txt -c copy "$outfile"</dev/null
+        $RM cc$$.txt
+        exit
     done
 done
