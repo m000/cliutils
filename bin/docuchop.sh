@@ -20,7 +20,7 @@ GREP="grep"
 #    pic_th -> A black frame conists of at least <pic_th>% black pixels.
 #    pix_th -> A black pixel may be up to <pix_th>% bright.
 # http://ffmpeg.org/ffmpeg-filters.html#blackdetect
-BD_OPTS=d=.2:pic_th=0.8:pix_th=0.10
+BD_OPTS=d=.05:pic_th=0.82:pix_th=0.10
 
 # Skip the content up to the first black scene. Useful for most documentaries.
 SKIP_FIRST=yes
@@ -36,16 +36,71 @@ VALID_EXTENSIONS="|.avi|.mkv|.mp4|.m4v|"
 # ffmpeg -skip_frame nokey -i file.avi -vf 'scale=128:72,tile=8x8' -an -vsync 0 keyframes%03d.png
 
 ##################################################################
-# Functions
+# Utility functions
 ##################################################################
-function analyze() {
+function dt() {
+    # Subtracts timestamps and prints result in proper format for ffmpeg.
+    # ffmpeg requires having a zero before the floating point for -1<dt<1.
+    # E.g. .5 is invalid and should be printed as 0.5.
+    local dtr=$(printf '((%f)-(%f))\n' "$1" "$2" | bc -l)
+    printf "%f" "$dtr"
+}
+
+function has_valid_extension() {
+    # Checks if the given filename's extension is among the global list
+    # of valid extensions.
+    local ext="${1##*.}"
+    echo "$VALID_EXTENSIONS" | $GREP -q "|\.$ext|"
+}
+
+function str_common_prefix() {
+    # Finds the longest common prefix of two strings.
+    # Found on: http://unix.stackexchange.com/a/18240/17259
+    local n=0
+    while [[ "${1:n:1}" != "" && "${1:n:1}" == "${2:n:1}" ]]; do
+       ((n++))
+    done
+    echo "${1:0:n}"
+}
+
+function make_filename() {
+    # Creates a filename from the common prefixes of the supplied arguments.
+    local f=""
+    local prefix="$1"
+    local ext=""
+
+    for f in "$@"; do
+        # Initialize and test file extension.
+        has_valid_extension "$f" || { echo "Skipping '$f'. Bad extension." 1>&2; continue; }
+        [ "$ext" = "" ] && ext="${f##*.}"
+        [ "${f##*.}" = "$ext" ] || { echo "Skipping '$f'. Files must have a '.$ext' extension." 1>&2; continue; }
+
+        # Update prefix.
+        prefix=$(str_common_prefix "$f" "$prefix")
+    done
+
+    # Normalize prefix.
+    prefix="${prefix%%[*}"
+    prefix="${prefix%"${prefix##*[![:space:]]}"}"   #" # " is a syntax highlight fix
+    prefix="${prefix:=video$$}"
+
+    # Print results.
+    echo "$prefix"."$ext"
+}
+
+##################################################################
+# ffmpeg wrapper functions
+##################################################################
+function video_analyze() {
     # Analyzes input file and writes results to "$bd_cache", "$fr_cache" and "$st_cache" files.
-    # The first file contains the black detection analysis results in a custom text format.
-    # The second file contains the frame analysis results in json format.
-    # The third file contains stream information for the file.
-    #
-    # We duplicate the input file in two fifos.
-    # This should allow for reading the file only once.
+    #   * The first file contains the black detection analysis results in a custom text format.
+    #   * The second file contains the frame analysis results in json format.
+    #   * The third file contains stream information for the file.
+    # Analysis may take a few minutes. In order to use stdout to display progress of the analysis,
+    # the names of the produced cached files are written in the filename specified with the second
+    # argument.
+    # In order to only read input file once and also exploit multiple cores for the analysis, the
+    # black detection and frame analysis run concurrently and read the file from two fifos.
     local f="$1"
     local caches="$2"
 
@@ -73,7 +128,7 @@ function analyze() {
         return
     fi
 
-    echo "Analyzing $f..."
+    echo "Analyzing '$f'..."
 
     # create fifos and feed file into them
     mkfifo "$fifo_bd"
@@ -95,9 +150,10 @@ function analyze() {
     echo "$st_cache" >> "$caches"
 }
 
-function prev_next_iframes() {
+function video_prev_next_iframes() {
     # parses "$fr_cache" and returns the position of the first iframes before and after the specified time
-    local t_start="$1"
+    local fr_cache="$1"
+    local t_start="$2"
     local jqfilter='reduce (
         .frames[] |
         select(.key_frame == 1) |
@@ -110,7 +166,6 @@ function prev_next_iframes() {
             "after": (if .after < %f and $i >= %f then $i else .after end)
         }
     ) | [.[]] | sort | .[]'
-    # "$t_start" is used 3 times in the filter!
     $JQ -r "$(printf "$jqfilter" "$t_start" "$t_start" "$t_start")" < "$fr_cache"
 }
 
@@ -124,8 +179,9 @@ function video_bitrate() {
     #   In our experience this is only the last frame.
     #   The defined times should correspond to iframes, otherwise the calculation will be
     #   inaccurate if dt=O(sec).
-    local t_start="$1"
-    local t_end="$2"
+    local fr_cache="$1"
+    local t_start="$2"
+    local t_end="$3"
 
     local jqfilter='reduce (
         .frames[] |
@@ -147,17 +203,26 @@ function video_bitrate() {
     echo "$br/1" | bc
 }
 
-function encoding_options() {
-    local brv="$1"
+function video_encoding_options() {
+    # Parse the stream information cache and attempts to produce encoding options
+    # that will result in the same quality/format with the original videl.
+    # The bitrate to be used is supplied through the second argument.
+    local st_cache="$1"
+    local brv="$2"
+    local jqfilter=""
 
     # Dump info for debugging.
     # $JQ '.streams[] | select(.codec_type == "audio")' < "$st_cache"
     # $JQ '.streams[] | select(.codec_type == "video")' < "$st_cache"
 
-    # echo -n "-c:a copy "
-    local jqfilter='.streams[] | select(.codec_type == "audio") |
-        "-c:a \(.codec_name) -b:a 64000"
-    '
+    # Get video codec only to manually check if we have implemented support for it.
+    # Support means that the jqfilter below can map all the necessary parameters.
+    echo "N/A"
+    exit 1
+
+    # Always copy audio.
+    echo -n "-c:a copy "
+
     # Create ffmpeg options for encoding video.
     # Automatic mapping from stream info to encoding options is not always possible*.
     # For this, we first set any custom options and then append them to the options that
@@ -165,7 +230,7 @@ function encoding_options() {
     #
     # * The problem is also described here: https://trac.ffmpeg.org/ticket/2901
     #   XVID mappings: http://permalink.gmane.org/gmane.comp.video.ffmpeg.user/12241
-    local jqfilter='.streams[] | select(.codec_type == "video") |
+    jqfilter='.streams[] | select(.codec_type == "video") |
         (if .codec_tag_string == "XVID" then
             (if .profile == "Advanced Simple Profile" then
                 "-profile:v 15 -preset slow"
@@ -178,60 +243,13 @@ function encoding_options() {
         "-c:v \(.codec_name) -tag:v \(.codec_tag_string) -bf:v \(.has_b_frames) -level:v \(.level) \($custom) -b:v %s"
     '
     $JQ -r "$(printf "$jqfilter" "$brv")" < "$st_cache"
-
     # -c:v mpeg4 -tag:v XVID -profile:v 15  -preset slow "$outfile"</dev/null
-    # level
-}
-
-function dt() {
-    # Subtracts timestamps and prints result in proper format for ffmpeg.
-    # ffmpeg requires having a zero before the floating point for -1<dt<1.
-    # E.g. .5 is invalid and should be printed as 0.5.
-    local dtr=$(printf '((%f)-(%f))\n' "$1" "$2" | bc -l)
-    printf "%f" "$dtr"
-}
-
-function common_prefix() {
-    # Finds the longest common prefix of two strings.
-    # http://unix.stackexchange.com/a/18240/17259
-    local n=0
-    while [[ "${1:n:1}" != "" && "${1:n:1}" == "${2:n:1}" ]]; do
-       ((n++))
-    done
-    echo "${1:0:n}"
-}
-
-function has_valid_extension() {
-    local ext="${1##*.}"
-    echo "$VALID_EXTENSIONS" | $GREP -q "|\.$ext|"
-}
-
-function make_filename() {
-    # Creates a filename from the common prefixes of the supplied arguments.
-    local f=""
-    local prefix="$1"
-    local ext=""
-
-    for f in "$@"; do
-        # Initialize and test file extension.
-        has_valid_extension "$f" || { echo "Skipping '$f'. Bad extension." 1>&2; continue; }
-        [ "$ext" = "" ] && ext="${f##*.}"
-        [ "${f##*.}" = "$ext" ] || { echo "Skipping '$f'. Files must have a '.$ext' extension." 1>&2; continue; }
-
-        # Update prefix.
-        prefix=$(common_prefix "$f" "$prefix")
-    done
-
-    # Normalize prefix.
-    prefix="${prefix%%[*}"
-    prefix="${prefix%"${prefix##*[![:space:]]}"}"   #" # " is a syntax highlight fix
-    prefix="${prefix:=video$$}"
-
-    # Print results.
-    echo "$prefix"."$ext"
 }
 
 function video_concat() {
+    # Concatenates videos using the ffmpeg concat demuxer.
+    # The first argument is used as the output file.
+    # The rest arguments are used as input files. 
     local f=""
     local outfile="$1"
     local cdemuxf="cdemuxf_$$_$RANDOM.txt"
@@ -257,11 +275,12 @@ function video_concat() {
 }
 
 function video_chop() {
+    # Chops the specified file on its black scenes.
     local f="$1"
     local sc=1                                                  # scene counter
 
     # Analyze file and get cached analysis files.
-    analyze "$f" "$f.meta.cache"
+    video_analyze "$f" "$f.meta.cache"
     local bd_cache=$($GREP "\.bd\.cache$" "$f.meta.cache")      # black detect cache
     local fr_cache=$($GREP "\.fr\.cache$" "$f.meta.cache")      # frames cache
     local st_cache=$($GREP "\.st\.cache$" "$f.meta.cache")      # streams cache
@@ -277,8 +296,8 @@ function video_chop() {
     local outfile=""                                            # final scene video file
     local outfile_1=""                                          # intermediate file 1 (reencoded)
     local outfile_2=""                                          # intermediate file 2 (stream copy)
-    local reencode_bitrate=""
-    local reencode_options=""
+    local reencode_bitrate=""                                   # identified bitrate for the part to be reencoded
+    local reencode_options=""                                   # determined encoding options for the same part
 
     # Loop on scenes using the detected black scenes.
     # Black scene line format: black_start:66.6667 black_end:66.967 black_duration:0.3003
@@ -295,28 +314,28 @@ function video_chop() {
             t_start=0
             t_end="$black_start"
         else
-            # normal processing
-            t_start="$black_start_prev"
+            t_start="$black_end_prev"
             t_end="$black_start"
         fi
 
         # Construct outfiles & remove old outfiles.
         outfile_1="${f%.*}.1.$((sc)).${f##*.}"
         outfile_2="${f%.*}.2.$((sc)).${f##*.}"
-        outfile="${f%.*}_$((sc)).${f##*.}"
+        outfile="${f%.*} scene$((sc)).${f##*.}"
         [ -f "$outfile" ] && $RM "$outfile"
         [ -f "$outfile_1" ] && $RM "$outfile_1"
         [ -f "$outfile_2" ] && $RM "$outfile_2"
 
         echo "Processing scene $((sc++))..."
         # Find the iframes before and after the starting time.
-        read prev_iframe next_iframe <<< $(prev_next_iframes "$t_start")
+        read prev_iframe next_iframe <<< $(video_prev_next_iframes "$fr_cache" "$t_start")
 
         # Calculate bitrate for the part that has to be reencoded.
-        reencode_bitrate=$(video_bitrate "$prev_iframe" "$next_iframe")
+        reencode_bitrate=$(video_bitrate "$fr_cache" "$prev_iframe" "$next_iframe")
 
         # Calculate ffmpeg options for the part that has to be reencoded.
-        reencode_options=$(encoding_options "$reencode_bitrate"k)
+        reencode_options=$(video_encoding_options "$st_cache" "$reencode_bitrate"k)
+        [ "$reencode_options" = "N/A" ] && { echo "Aborting. Don't know how to get reencode options for '$f'." 1>&2; } && return
 
         ##############################################################################################
         # We want to trim video between the detected $t_start and $t_end and avoid reencoding as much
@@ -356,9 +375,12 @@ function video_chop() {
         video_concat "$outfile" "$outfile_1" "$outfile_2"
         $RM -f "$outfile_1" "$outfile_2"
     done
+
+    # do the final scene
+    # ...
 }
 
-if [ "$CONCAT_ALL" = "yes" ]; then
+if [[ "$CONCAT_ALL" = "yes" && $# > 1 ]]; then
     concat_file="$(make_filename "$@")"
     if [ -f "$concat_file" ]; then
         echo "Continuing with existing concat file '$concat_file'..." 1>&2;
