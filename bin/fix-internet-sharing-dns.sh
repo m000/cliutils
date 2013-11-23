@@ -20,5 +20,5 @@ newdns='"208.67.222.222", "208.67.220.220"'     # List of DNS servers to use. Mu
 
 "$PLUTIL" -convert json -o - "$bootpdcf" |
     "$JQ" '.Subnets[].dhcp_domain_name_server = ['"$newdns"']' |
-    "$PLUTIL" -convert xml1 -o - - 
+    "$PLUTIL" -convert xml1 -o - - |
     "$SUDO" "$SPONGE" "$bootpdcf"
