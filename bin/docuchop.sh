@@ -11,6 +11,7 @@ RM="rm"
 PV="pv"
 PRINTF="printf"
 GREP="grep"
+TR="tr"
 
 ##################################################################
 # Runtime defaults
@@ -210,40 +211,57 @@ function video_encoding_options() {
     local st_cache="$1"
     local brv="$2"
     local jqfilter=""
+    local codec=""
 
-    # Dump info for debugging.
-    # $JQ '.streams[] | select(.codec_type == "audio")' < "$st_cache"
-    # $JQ '.streams[] | select(.codec_type == "video")' < "$st_cache"
+    # Check if we have implemented support for this video codec.
+    # Each time we add support for a codec, it has to be added to the list
+    # of accepted codecs below.
+    jqfilter='.streams[] | select(.codec_type == "video") | "\(.codec_name) \(.codec_tag_string)"'
+    codec=$($JQ -r "$(printf "$jqfilter" "$brv")" < "$st_cache" | $TR A-Z a-z)
+    case "$codec" in
+        "h264 avc1"|"mpeg4 xvid")
+            # do nothing
+        ;;
 
-    # Get video codec only to manually check if we have implemented support for it.
-    # Support means that the jqfilter below can map all the necessary parameters.
-    echo "N/A"
-    exit 1
+        *)
+            # Exit executing subshell. This will not terminate the whole script!
+            # The caller of the function must check exit code and take appropriate action.
+            echo "Detected codec: $codec" 1>&2
+            echo "N/A"
+            exit 1
+        ;;
+    esac
 
     # Always copy audio.
     echo -n "-c:a copy "
 
     # Create ffmpeg options for encoding video.
-    # Automatic mapping from stream info to encoding options is not always possible*.
-    # For this, we first set any custom options and then append them to the options that
-    # can be set automatically (i.e. without manual processing).
-    #
-    # * The problem is also described here: https://trac.ffmpeg.org/ticket/2901
-    #   XVID mappings: http://permalink.gmane.org/gmane.comp.video.ffmpeg.user/12241
+    # For each supported codec, stream info must be mapped to encoding options.
+    # For XVID mappings, see http://permalink.gmane.org/gmane.comp.video.ffmpeg.user/12241
     jqfilter='.streams[] | select(.codec_type == "video") |
-        (if .codec_tag_string == "XVID" then
-            (if .profile == "Advanced Simple Profile" then
-                "-profile:v 15 -preset slow"
-            else
-                ""
-            end)
-        else
-            ""
-        end) as $custom |
-        "-c:v \(.codec_name) -tag:v \(.codec_tag_string) -bf:v \(.has_b_frames) -level:v \(.level) \($custom) -b:v %s"
+        (
+            if .codec_tag_string == "XVID" and .profile == "Advanced Simple Profile" then (
+            .opt_codec="-c:v \(.codec_name)" |
+            .opt_codec_tag="-tag:v \(.codec_tag_string)" |
+            .opt_codec_profile="-profile:v 15" |
+            .opt_codec_level="-level:v \(.level)" |
+            .opt_codec_preset="-preset slow" |
+            .opt_codec_bframes="-bf:v \(.has_b_frames)"
+            ) else . end
+        ) |
+        (
+            if .codec_name == "h264" then (
+            .opt_codec="-c:v \(.codec_name)" |
+            .opt_codec_tag="" |
+            .opt_codec_profile="-profile:v \(.profile)" |
+            .opt_codec_level="-level:v \(.level)" |
+            .opt_codec_preset="-preset slow" |
+            .opt_codec_bframes="-bf:v \(.has_b_frames)"
+            ) else . end
+        ) |
+        "\(.opt_codec) \(.opt_codec_tag) \(.opt_codec_profile) \(.opt_codec_level) \(.opt_codec_preset) \(.opt_codec_bframes) -b:v %s"
     '
     $JQ -r "$(printf "$jqfilter" "$brv")" < "$st_cache"
-    # -c:v mpeg4 -tag:v XVID -profile:v 15  -preset slow "$outfile"</dev/null
 }
 
 function video_concat() {
@@ -319,8 +337,8 @@ function video_chop() {
         fi
 
         # Construct outfiles & remove old outfiles.
-        outfile_1="${f%.*}.1.$((sc)).${f##*.}"
-        outfile_2="${f%.*}.2.$((sc)).${f##*.}"
+        outfile_1="${f%.*}.$((sc)).1.${f##*.}"
+        outfile_2="${f%.*}.$((sc)).2.${f##*.}"
         outfile="${f%.*} scene$((sc)).${f##*.}"
         [ -f "$outfile" ] && $RM "$outfile"
         [ -f "$outfile_1" ] && $RM "$outfile_1"
@@ -374,6 +392,7 @@ function video_chop() {
         # Concat files. First argument is the final output.
         video_concat "$outfile" "$outfile_1" "$outfile_2"
         $RM -f "$outfile_1" "$outfile_2"
+        # [[ $sc > 3 ]] && break
     done
 
     # do the final scene
