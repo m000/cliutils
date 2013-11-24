@@ -174,7 +174,7 @@ function video_make_scenes() {
     local black_start=""                                        # current black scene start
     local black_end=""                                          # current black scene end
     local black_start_prev=""                                   # previous black scene start
-    local black_end_prev=""                                     # previous black scene end
+    local black_end_prev="0"                                    # previous black scene end
     local l=""                                                  # temp variable
     local t_start=""                                            # trim start time
     local t_end=""                                              # trim stop time
@@ -190,7 +190,7 @@ function video_make_scenes() {
         eval $l
 
         if (( bsc++ < $SKIP_FIRST )); then
-            echo "Skipping until $black_end..." >&2
+            echo "Skipping to $black_end..." >&2
             continue;
         elif [ "$merge" = "yes" ]; then
             # merge with previous - only update $t_end
@@ -335,7 +335,7 @@ function video_encoding_options() {
 }
 
 function video_concat() {
-    # Concatenates videos using the ffmpeg concat demuxer.
+    # Concatenates videos using an appropriate method.
     # The first argument is used as the output file.
     # The rest arguments are used as input files. 
     local f=""
@@ -475,7 +475,7 @@ function video_chop() {
         dt1=$(dt "$next_iframe" "$t_start") 
         dt2=$(dt "$t_end" "$next_iframe")
         if (( $(bc <<< "$dt1/1") < "$SKIP_PART1_THRESHOLD" )); then
-            # First part too small. Skip it.
+            # First part too small. Just copy the second to the output.
             $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile" -loglevel warning </dev/null        
         else
             $FFMPEG -ss "$prev_iframe" -i "$f" -ss $(dt "$t_start" "$prev_iframe") -t "$dt1" $reencode_options "$outfile_1" -loglevel warning </dev/null
