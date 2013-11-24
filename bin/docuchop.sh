@@ -26,20 +26,10 @@ CUT="cut"
 # http://ffmpeg.org/ffmpeg-filters.html#blackdetect
 BD_OPTS=d=.05:pic_th=0.82:pix_th=0.10
 
-# Skip the content up to the first black scene. Useful for most documentaries.
-SKIP_FIRST=no
-
-# Concat all videos in one before processing.
-# Uses more space but you won't have to care about videos not stopping on a black scene.
-CONCAT_ALL=yes
-
 # Extensions of files allowed to be processed. Make sure to include | delimiters on start and end!
 VALID_EXTENSIONS="|.avi|.mkv|.mp4|.m4v|"
 
-# Threshold for merging smaller scenes.
-MERGE_THRESHOLD=150
-
-# Threshold for not re-encoding the first part of the trimmed video.
+# Threshold (in sec) for not re-encoding the first part of the trimmed video.
 SKIP_PART1_THRESHOLD=1
 
 # For example, produce 8x8 PNG tiles of all keyframes (‘-skip_frame nokey’) in a movie:
@@ -180,6 +170,7 @@ function video_make_scenes() {
     local bd_cache="$1"
     local st_cache="$2"
 
+    local bsc=0                                                 # black scene counter
     local black_start=""                                        # current black scene start
     local black_end=""                                          # current black scene end
     local black_start_prev=""                                   # previous black scene start
@@ -198,12 +189,11 @@ function video_make_scenes() {
         black_end_prev="$black_end"
         eval $l
 
-        if [ "$black_start_prev" = "" ]; then
-            # first iteration processing
-            [ "$SKIP_FIRST" = "yes" ] && continue
-            t_start=0
-            t_end="$black_start"
+        if (( bsc++ < $SKIP_FIRST )); then
+            echo "Skipping until $black_end..." >&2
+            continue;
         elif [ "$merge" = "yes" ]; then
+            # merge with previous - only update $t_end
             t_end="$black_start"
             merge="no"
         else
@@ -497,6 +487,45 @@ function video_chop() {
         # (( $sc > 2 )) && break
     done
 }
+
+##################################################################
+# Argument processing & action.
+##################################################################
+
+
+
+# Concat all videos in one before processing.
+# Uses more space but you won't have to care about videos not stopping on a black scene.
+CONCAT_ALL="no"
+
+# How many scenes should be skipped from start. Useful for documentary credits etc.
+SKIP_FIRST=0
+
+# Threshold for merging smaller scenes.
+MERGE_THRESHOLD=150
+
+while getopts ":cs:t:" opt; do
+  case $opt in
+    s) ((SKIP_FIRST+=OPTARG)) ;;
+    c) CONCAT_ALL="yes";;
+    t)
+        if (( $OPTARG > 0 )); then
+            MERGE_THRESHOLD="$OPTARG"
+        else
+            echo "Invalid merge threshold specified. Using default." >&2
+        fi
+        ;;
+    \?)
+        echo "Invalid option: -$OPTARG" >&2
+        exit 1
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument." >&2
+        exit 1
+        ;;
+  esac
+done
+shift $((OPTIND-1))
 
 if [[ "$CONCAT_ALL" = "yes" && $# -gt 1 ]]; then
     concat_file="$(make_filename "$@")"
