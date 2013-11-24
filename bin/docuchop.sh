@@ -24,7 +24,7 @@ TR="tr"
 BD_OPTS=d=.05:pic_th=0.82:pix_th=0.10
 
 # Skip the content up to the first black scene. Useful for most documentaries.
-SKIP_FIRST=yes
+SKIP_FIRST=no
 
 # Concat all videos in one before processing.
 # Uses more space but you won't have to care about videos not stopping on a black scene.
@@ -32,6 +32,12 @@ CONCAT_ALL=yes
 
 # Extensions of files allowed to be processed. Make sure to include | delimiters on start and end!
 VALID_EXTENSIONS="|.avi|.mkv|.mp4|.m4v|"
+
+# Threshold for merging smaller scenes.
+MERGE_THRESHOLD=120
+
+# Threshold for not re-encoding the first part of the trimmed video.
+SKIP_PART1_THRESHOLD=1
 
 # For example, produce 8x8 PNG tiles of all keyframes (‘-skip_frame nokey’) in a movie:
 # ffmpeg -skip_frame nokey -i file.avi -vf 'scale=128:72,tile=8x8' -an -vsync 0 keyframes%03d.png
@@ -151,6 +157,48 @@ function video_analyze() {
     echo "$st_cache" >> "$caches"
 }
 
+function video_make_scenes() {
+    local bd_cache="$1"
+
+    local black_start=""                                        # current black scene start
+    local black_end=""                                          # current black scene end
+    local black_start_prev=""                                   # previous black scene start
+    local black_end_prev=""                                     # previous black scene end
+    local l=""                                                  # temp variable
+    local t_start=""                                            # trim start time
+    local t_end=""                                              # trim stop time
+    local merge="no"                                            # flags when current scene should be merged with previous
+    # Loop on scenes using the detected black scenes.
+    # Black scene line format: black_start:66.6667 black_end:66.967 black_duration:0.3003
+    # We transform each lines to shell variable assignments: black_start=66.6667; black_end=66.967; black_duration=0.3003 
+    grep ^black_start "$bd_cache" | sed 's/:/=/g; s/  */; /g' | while read l; do
+        # copy old start/end values & assign new ones
+        black_start_prev="$black_start"
+        black_end_prev="$black_end"
+        eval $l
+
+        if [ "$black_start_prev" = "" ]; then
+            # first iteration processing
+            [ "$SKIP_FIRST" = "yes" ] && continue
+            t_start=0
+            t_end="$black_start"
+        elif [ "$merge" = "yes" ]; then
+            t_end="$black_start"
+            merge="no"
+        else
+            t_start="$black_end_prev"
+            t_end="$black_start"
+        fi
+
+        if (( $(bc <<< "$(dt "$t_end" "$t_start")/1") < "$MERGE_THRESHOLD" )); then
+            merge="yes"
+            continue
+        else
+            echo "$t_start" "$t_end" #$(dt "$t_end" "$t_start")
+        fi
+    done
+}
+
 function video_prev_next_iframes() {
     # parses "$fr_cache" and returns the position of the first iframes before and after the specified time
     local fr_cache="$1"
@@ -201,7 +249,7 @@ function video_bitrate() {
     local br=$($JQ -r "$(printf "$jqfilter" "$t_start" "$t_end")" < "$fr_cache")
 
     # round result to an int
-    echo "$br/1" | bc
+    bc <<< "$br/1"
 }
 
 function video_encoding_options() {
@@ -270,7 +318,7 @@ function video_concat() {
     # The rest arguments are used as input files. 
     local f=""
     local outfile="$1"
-    local cdemuxf="cdemuxf_$$_$RANDOM.txt"
+    local cdemuxf="${outfile%.*}_cdemuxf.txt"
 
     # Throw away first argument which represents the outfile.
     shift
@@ -304,38 +352,18 @@ function video_chop() {
     local st_cache=$($GREP "\.st\.cache$" "$f.meta.cache")      # streams cache
 
     # Variables used while looping scenes.
-    local black_start=""                                        # current black scene start
-    local black_end=""                                          # current black scene end
-    local black_start_prev=""                                   # previous black scene start
-    local black_end_prev=""                                     # previous black scene end
-    local l=""                                                  # temp variable
     local t_start=""                                            # trim start time
     local t_end=""                                              # trim end time
     local outfile=""                                            # final scene video file
     local outfile_1=""                                          # intermediate file 1 (reencoded)
     local outfile_2=""                                          # intermediate file 2 (stream copy)
+    local dt1=""                                                # length in sec of intermediate file 1
+    local dt2=""                                                # length in sec of intermediate file 2
     local reencode_bitrate=""                                   # identified bitrate for the part to be reencoded
     local reencode_options=""                                   # determined encoding options for the same part
 
-    # Loop on scenes using the detected black scenes.
-    # Black scene line format: black_start:66.6667 black_end:66.967 black_duration:0.3003
-    # We transform each lines to shell variable assignments: black_start=66.6667; black_end=66.967; black_duration=0.3003
-    grep ^black_start "$bd_cache" | sed 's/:/=/g; s/  */; /g' | while read l; do
-        # copy old start/end values & assign new ones
-        black_start_prev="$black_start"
-        black_end_prev="$black_end"
-        eval $l
-
-        if [ "$black_start_prev" = "" ]; then
-            # first iteration processing
-            [ "$SKIP_FIRST" = "yes" ] && continue
-            t_start=0
-            t_end="$black_start"
-        else
-            t_start="$black_end_prev"
-            t_end="$black_start"
-        fi
-
+    # Create scenes based on black scenes and to the trimming.
+    video_make_scenes "$bd_cache" | while read t_start t_end; do
         # Construct outfiles & remove old outfiles.
         outfile_1="${f%.*}.$((sc)).1.${f##*.}"
         outfile_2="${f%.*}.$((sc)).2.${f##*.}"
@@ -386,20 +414,28 @@ function video_chop() {
         # Note: On non-interactive invocations of ffmpeg stdin should be read from /dev/null!!!
         #       Otherwise ffmpeg reads chars generated in the script, gets confused and fails.
         ##############################################################################################
-        $FFMPEG -ss "$prev_iframe" -i "$f" -ss $(dt "$t_start" "$prev_iframe") -t $(dt "$next_iframe" "$t_start") $reencode_options "$outfile_1" -loglevel warning </dev/null
-        $FFMPEG -ss "$next_iframe" -i "$f" -t $(dt "$t_end" "$next_iframe") -c:a copy -c:v copy "$outfile_2" -loglevel warning </dev/null
+        dt1=$(dt "$next_iframe" "$t_start") 
+        dt2=$(dt "$t_end" "$next_iframe")
+        if (( $(bc <<< "$dt1/1") < "$SKIP_PART1_THRESHOLD" )); then
+            # First part too small. Skip it.
+            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile" -loglevel warning </dev/null        
+        else
+            $FFMPEG -ss "$prev_iframe" -i "$f" -ss $(dt "$t_start" "$prev_iframe") -t "$dt1" $reencode_options "$outfile_1" -loglevel warning </dev/null
+            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile_2" -loglevel warning </dev/null
+            # Concat files. First argument is the final output.
+            video_concat "$outfile" "$outfile_1" "$outfile_2"
+            $RM -f "$outfile_1" "$outfile_2"
+        fi
 
-        # Concat files. First argument is the final output.
-        video_concat "$outfile" "$outfile_1" "$outfile_2"
-        $RM -f "$outfile_1" "$outfile_2"
-        # [[ $sc > 3 ]] && break
+
+        # (( $sc > 3 )) && break
     done
 
     # do the final scene
     # ...
 }
 
-if [[ "$CONCAT_ALL" = "yes" && $# > 1 ]]; then
+if [[ "$CONCAT_ALL" = "yes" && $# -gt 1 ]]; then
     concat_file="$(make_filename "$@")"
     if [ -f "$concat_file" ]; then
         echo "Continuing with existing concat file '$concat_file'..." 1>&2;
