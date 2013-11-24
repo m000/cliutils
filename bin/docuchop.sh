@@ -12,6 +12,9 @@ PV="pv"
 PRINTF="printf"
 GREP="grep"
 TR="tr"
+SED="sed"
+PASTE="paste"
+CUT="cut"
 
 ##################################################################
 # Runtime defaults
@@ -34,7 +37,7 @@ CONCAT_ALL=yes
 VALID_EXTENSIONS="|.avi|.mkv|.mp4|.m4v|"
 
 # Threshold for merging smaller scenes.
-MERGE_THRESHOLD=120
+MERGE_THRESHOLD=150
 
 # Threshold for not re-encoding the first part of the trimmed video.
 SKIP_PART1_THRESHOLD=1
@@ -49,8 +52,8 @@ function dt() {
     # Subtracts timestamps and prints result in proper format for ffmpeg.
     # ffmpeg requires having a zero before the floating point for -1<dt<1.
     # E.g. .5 is invalid and should be printed as 0.5.
-    local dtr=$(printf '((%f)-(%f))\n' "$1" "$2" | bc -l)
-    printf "%f" "$dtr"
+    local dtr=$($PRINTF '((%f)-(%f))\n' "$1" "$2" | bc -l)
+    $PRINTF "%f" "$dtr"
 }
 
 function has_valid_extension() {
@@ -98,6 +101,22 @@ function make_filename() {
 ##################################################################
 # ffmpeg wrapper functions
 ##################################################################
+function video_av_format() {
+    # Returns the video/audio format used by the specified video file. E.g. "h264:aac".
+    # When input file has multiple video/audio streams, the first from each is used.
+    local f="$1"
+    local jqfilter='.streams[] |
+        {codec_type, codec_name} |
+        [select(.codec_type=="video"), select(.codec_type=="audio")] |
+        .[0] |
+        .codec_name
+    '
+    $FFPROBE -show_format -show_streams -print_format json -v quiet "$f" |
+        $JQ -r "$jqfilter" |
+        $PASTE -s -d: -  |
+        $TR A-Z a-z
+}
+
 function video_analyze() {
     # Analyzes input file and writes results to "$bd_cache", "$fr_cache" and "$st_cache" files.
     #   * The first file contains the black detection analysis results in a custom text format.
@@ -124,10 +143,10 @@ function video_analyze() {
     local st_cache="$f".st.cache
 
     # always create streams files - this is cheap
-    $FFPROBE -show_format -show_streams -print_format json -v 9 "$f" > "$st_cache"
+    $FFPROBE -show_format -show_streams -print_format json -v quiet "$f" > "$st_cache"
 
     # check if we have cached analysis files
-    if [ -f "$fr_cache" ] && [ -f "$bd_cache" ] && grep -q "$bdopts_line" "$bd_cache"; then
+    if [ -f "$fr_cache" ] && [ -f "$bd_cache" ] && $GREP -q "$bdopts_line" "$bd_cache"; then
         echo "Using cached analysis files for $f..."
         echo "$bd_cache" > "$caches"
         echo "$fr_cache" >> "$caches"
@@ -159,6 +178,7 @@ function video_analyze() {
 
 function video_make_scenes() {
     local bd_cache="$1"
+    local st_cache="$2"
 
     local black_start=""                                        # current black scene start
     local black_end=""                                          # current black scene end
@@ -168,10 +188,11 @@ function video_make_scenes() {
     local t_start=""                                            # trim start time
     local t_end=""                                              # trim stop time
     local merge="no"                                            # flags when current scene should be merged with previous
+
     # Loop on scenes using the detected black scenes.
     # Black scene line format: black_start:66.6667 black_end:66.967 black_duration:0.3003
     # We transform each lines to shell variable assignments: black_start=66.6667; black_end=66.967; black_duration=0.3003 
-    grep ^black_start "$bd_cache" | sed 's/:/=/g; s/  */; /g' | while read l; do
+    $GREP ^black_start "$bd_cache" | $SED 's/:/=/g; s/  */; /g' | while read l; do
         # copy old start/end values & assign new ones
         black_start_prev="$black_start"
         black_end_prev="$black_end"
@@ -194,9 +215,20 @@ function video_make_scenes() {
             merge="yes"
             continue
         else
-            echo "$t_start" "$t_end" #$(dt "$t_end" "$t_start")
+            echo "$t_start" "$t_end"
         fi
     done
+
+    # Do the final scene.
+    # Start and end have to be recalculated because the previous loop
+    # executes in a subshell, so variables are destroyed on exit.
+    l=$($GREP ^black_start "$bd_cache" | tail -1 | $SED 's/:/=/g; s/  */; /g')
+    eval $l
+    t_start="$black_end"
+    t_end=$($JQ -r '.format.duration' < "$st_cache")
+    if (( $(bc <<< "$(dt "$t_end" "$t_start")/1") >= "$MERGE_THRESHOLD" )); then
+        echo "$t_start" "$t_end"
+    fi
 }
 
 function video_prev_next_iframes() {
@@ -215,7 +247,7 @@ function video_prev_next_iframes() {
             "after": (if .after < %f and $i >= %f then $i else .after end)
         }
     ) | [.[]] | sort | .[]'
-    $JQ -r "$(printf "$jqfilter" "$t_start" "$t_start" "$t_start")" < "$fr_cache"
+    $JQ -r "$($PRINTF "$jqfilter" "$t_start" "$t_start" "$t_start")" < "$fr_cache"
 }
 
 function video_bitrate() {
@@ -246,7 +278,7 @@ function video_bitrate() {
             "size": (.size+$i["pkt_size"])
         }
     ) | .time as $t | .size | (8*(./$t))/1024'
-    local br=$($JQ -r "$(printf "$jqfilter" "$t_start" "$t_end")" < "$fr_cache")
+    local br=$($JQ -r "$($PRINTF "$jqfilter" "$t_start" "$t_end")" < "$fr_cache")
 
     # round result to an int
     bc <<< "$br/1"
@@ -265,10 +297,10 @@ function video_encoding_options() {
     # Each time we add support for a codec, it has to be added to the list
     # of accepted codecs below.
     jqfilter='.streams[] | select(.codec_type == "video") | "\(.codec_name) \(.codec_tag_string)"'
-    codec=$($JQ -r "$(printf "$jqfilter" "$brv")" < "$st_cache" | $TR A-Z a-z)
+    codec=$($JQ -r "$($PRINTF "$jqfilter" "$brv")" < "$st_cache" | $TR A-Z a-z)
     case "$codec" in
         "h264 avc1"|"mpeg4 xvid")
-            # do nothing
+            # good to go - do nothing
         ;;
 
         *)
@@ -309,7 +341,7 @@ function video_encoding_options() {
         ) |
         "\(.opt_codec) \(.opt_codec_tag) \(.opt_codec_profile) \(.opt_codec_level) \(.opt_codec_preset) \(.opt_codec_bframes) -b:v %s"
     '
-    $JQ -r "$(printf "$jqfilter" "$brv")" < "$st_cache"
+    $JQ -r "$($PRINTF "$jqfilter" "$brv")" < "$st_cache"
 }
 
 function video_concat() {
@@ -318,7 +350,10 @@ function video_concat() {
     # The rest arguments are used as input files. 
     local f=""
     local outfile="$1"
-    local cdemuxf="${outfile%.*}_cdemuxf.txt"
+    local concat_in=""
+    local ext="${outfile##*.}"
+    local formats=""
+    local fifotmp=""
 
     # Throw away first argument which represents the outfile.
     shift
@@ -326,18 +361,46 @@ function video_concat() {
     # Test if the outfile is suitable for ffmpeg output.
     has_valid_extension "$outfile" || { echo "Aborting. Bad extension for concat outfile '$f'." 1>&2; exit; }
 
-    # Prepare file for ffmpeg concat demuxer.
-    # http://ffmpeg.org/trac/ffmpeg/wiki/How%20to%20concatenate%20%28join,%20merge%29%20media%20files#demuxer
-    $RM -f "$cdemuxf"
-    for f in "$@"; do
-        [ -r "$f" ] || { echo "Skipping '$f'. Unreadable." 1>&2; continue; }
-        has_valid_extension "$f" || { echo "Skipping '$f'. Bad extension." 1>&2; continue; }
-        printf "file '%s'\n" "$f" >> "$cdemuxf"
-    done
+    # Get the A/V formats from the first infile.
+    formats=$(video_av_format "$1")
 
-    # Concat & cleanup.
-    $FFMPEG -f concat -i "$cdemuxf" -c copy "$outfile" -loglevel warning </dev/null
-    $RM -f "$cdemuxf"
+    # Choose appropriate method based on A/V format.
+    case "$formats" in
+        "h264:aac")
+            # Use concat protocol for h264/aac.
+            # http://trac.ffmpeg.org/wiki/How%20to%20concatenate%20%28join,%20merge%29%20media%20files#protocol
+            concat_in="${outfile%.*}_mpegts_concat.txt"
+            $RM -f "$concat_in"
+            for f in "$@"; do
+                [ -r "$f" ] || { echo "Skipping '$f'. Unreadable." 1>&2; continue; }
+                has_valid_extension "$f" || { echo "Skipping '$f'. Bad extension." 1>&2; continue; }
+                [ $(video_av_format "$f") = "$formats" ] || { echo "Skipping '$f'. Bad format." 1>&2; continue; }
+
+                # make sure to use -y to convince ffmpeg to "overwrite" fifos
+                fifotmp="$(basename "$f" | tr \ . _)_concat_fifo"
+                mkfifo "$fifotmp"
+                echo "$fifotmp" >> "$concat_in"
+                $FFMPEG -i "$f" -c copy -bsf:v h264_mp4toannexb -f mpegts -y "$fifotmp" -loglevel warning </dev/null &
+            done
+            $FFMPEG -f mpegts -i "concat:$($PASTE -s -d\| "$concat_in")" -c copy -bsf:a aac_adtstoasc "$outfile" -loglevel warning </dev/null
+            $RM -f *_concat_fifo "$concat_in"
+            ;;
+        *)
+            # When in doubt, use the concat demuxer.
+            # http://trac.ffmpeg.org/wiki/How%20to%20concatenate%20%28join,%20merge%29%20media%20files#demuxer
+            concat_in="${outfile%.*}_demuxfilter_concat.txt"
+            $RM -f "$concat_in"
+            for f in "$@"; do
+                [ -r "$f" ] || { echo "Skipping '$f'. Unreadable." 1>&2; continue; }
+                has_valid_extension "$f" || { echo "Skipping '$f'. Bad extension." 1>&2; continue; }
+                [ $(video_av_format "$f") = "$formats" ] || { echo "Skipping '$f'. Bad format." 1>&2; continue; }
+
+                $PRINTF "file '%s'\n" "$f" >> "$concat_in"
+            done
+            $FFMPEG -f concat -i "$concat_in" -c copy "$outfile" -loglevel warning </dev/null
+            $RM -f "$concat_in"
+            ;;
+    esac
 }
 
 function video_chop() {
@@ -363,7 +426,7 @@ function video_chop() {
     local reencode_options=""                                   # determined encoding options for the same part
 
     # Create scenes based on black scenes and to the trimming.
-    video_make_scenes "$bd_cache" | while read t_start t_end; do
+    video_make_scenes "$bd_cache" "$st_cache" | while read t_start t_end; do
         # Construct outfiles & remove old outfiles.
         outfile_1="${f%.*}.$((sc)).1.${f##*.}"
         outfile_2="${f%.*}.$((sc)).2.${f##*.}"
@@ -373,6 +436,11 @@ function video_chop() {
         [ -f "$outfile_2" ] && $RM "$outfile_2"
 
         echo "Processing scene $((sc++))..."
+
+        # Scene debug.
+        # echo $t_start $t_end
+        # continue
+
         # Find the iframes before and after the starting time.
         read prev_iframe next_iframe <<< $(video_prev_next_iframes "$fr_cache" "$t_start")
 
@@ -426,13 +494,8 @@ function video_chop() {
             video_concat "$outfile" "$outfile_1" "$outfile_2"
             $RM -f "$outfile_1" "$outfile_2"
         fi
-
-
-        # (( $sc > 3 )) && break
+        # (( $sc > 2 )) && break
     done
-
-    # do the final scene
-    # ...
 }
 
 if [[ "$CONCAT_ALL" = "yes" && $# -gt 1 ]]; then
