@@ -372,7 +372,7 @@ function video_concat() {
                 echo "$fifotmp" >> "$concat_in"
                 $FFMPEG -i "$f" -c copy -bsf:v h264_mp4toannexb -f mpegts -y "$fifotmp" -loglevel warning </dev/null &
             done
-            $FFMPEG -f mpegts -i "concat:$($PASTE -s -d\| "$concat_in")" -c copy -bsf:a aac_adtstoasc "$outfile" -loglevel warning </dev/null
+            $FFMPEG -f mpegts -i "concat:$($PASTE -s -d\| "$concat_in")" -c copy -bsf:a aac_adtstoasc -y "$outfile" -loglevel warning </dev/null
             $RM -f *_concat_fifo "$concat_in"
             ;;
         *)
@@ -387,7 +387,7 @@ function video_concat() {
 
                 $PRINTF "file '%s'\n" "$f" >> "$concat_in"
             done
-            $FFMPEG -f concat -i "$concat_in" -c copy "$outfile" -loglevel warning </dev/null
+            $FFMPEG -f concat -i "$concat_in" -c copy -y "$outfile" -loglevel warning </dev/null
             $RM -f "$concat_in"
             ;;
     esac
@@ -476,12 +476,15 @@ function video_chop() {
         dt2=$(dt "$t_end" "$next_iframe")
         if (( $(bc <<< "$dt1/1") < "$SKIP_PART1_THRESHOLD" )); then
             # First part too small. Just copy the second to the output.
-            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile" -loglevel warning </dev/null        
+            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy -y "$outfile" -loglevel warning </dev/null
         else
-            $FFMPEG -ss "$prev_iframe" -i "$f" -ss $(dt "$t_start" "$prev_iframe") -t "$dt1" $reencode_options "$outfile_1" -loglevel warning </dev/null
-            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy "$outfile_2" -loglevel warning </dev/null
+            $FFMPEG -ss "$prev_iframe" -i "$f" -ss $(dt "$t_start" "$prev_iframe") -t "$dt1" $reencode_options -y "$outfile_1" -loglevel warning </dev/null
+            $FFMPEG -ss "$next_iframe" -i "$f" -t "$dt2" -c:a copy -c:v copy -y "$outfile_2" -loglevel warning </dev/null
             # Concat files. First argument is the final output.
             video_concat "$outfile" "$outfile_1" "$outfile_2"
+            # $FFPROBE -select_streams v -show_frames -print_format json -v quiet "$outfile_1" > "$outfile_1".frames
+            # $FFPROBE -select_streams v -show_frames -print_format json -v quiet "$outfile_2" > "$outfile_2".frames
+            # $FFPROBE -select_streams v -show_frames -print_format json -v quiet "$outfile_3" > "$outfile_3".frames
             $RM -f "$outfile_1" "$outfile_2"
         fi
         # (( $sc > 2 )) && break
