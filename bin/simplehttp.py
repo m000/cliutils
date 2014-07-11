@@ -29,7 +29,7 @@ def test(HandlerClass=SimpleHTTPRequestHandler, ServerClass=BaseHTTPServer.HTTPS
     httpd = ServerClass(server_address, HandlerClass)
 
     sa = httpd.socket.getsockname()
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    print "Serving HTTP on", 'http://%s:%d' % (sa[0], sa[1]), "..."
     httpd.serve_forever()
 
 if __name__ == "__main__":
