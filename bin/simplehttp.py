@@ -12,7 +12,7 @@ import BaseHTTPServer
 def test(HandlerClass=SimpleHTTPRequestHandler, ServerClass=BaseHTTPServer.HTTPServer):
     protocol = "HTTP/1.0"
     host = '127.0.0.1'
-    port = 8000
+    port = 18000
     if len(sys.argv) > 1:
         arg = sys.argv[1]
         if ':' in arg:
