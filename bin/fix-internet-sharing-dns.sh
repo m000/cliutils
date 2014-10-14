@@ -12,13 +12,18 @@ PLUTIL=plutil
 JQ=jq
 SPONGE=sponge
 SUDO=sudo
+KILLALL=killall
 
 bootpdcf=/etc/bootpd.plist                      # Location of bootpd config file.
 newdns='"208.67.222.222", "208.67.220.220"'     # List of DNS servers to use. Must be comma separated and quoted.
 
 [ -r "$bootpdcf" ] || { echo "Cannot read bootpd config from '$bootpdcf'." 1>&2; exit 1; }
 
+# rewrite bootpd configuration
 "$PLUTIL" -convert json -o - "$bootpdcf" |
     "$JQ" '.Subnets[].dhcp_domain_name_server = ['"$newdns"']' |
     "$PLUTIL" -convert xml1 -o - - |
     "$SUDO" "$SPONGE" "$bootpdcf"
+
+# force bootpd to reread the configuration and/or clear dhcp mappings
+"$SUDO" "$KILLALL" -HUP bootpd
