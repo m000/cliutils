@@ -21,6 +21,7 @@ from pprint import pprint
 
 MIN_SAVEPATH_LENGTH = 3
 SAVEPATH_SAMPLE_SIZE = 10
+SAVEPATH_SAMPLE_RETRIES = 5
 MOVE_ACROSS_FILESYSTEMS = False
 HR_LENGTH = 70
 DRY_RUN = False
@@ -60,8 +61,8 @@ if __name__ == '__main__':
     savepath = os.path.commonprefix(allpaths)
     if (len(savepath) < MIN_SAVEPATH_LENGTH):
         # Failed to calculate savepath from all used paths. Try sampling.
-        for i in xrange(5):
-            savepath = os.path.commonprefix(random.sample(allpaths, SAVEPATH_SAMPLE_SIZE))
+        for i in xrange(SAVEPATH_SAMPLE_RETRIES):
+            savepath = os.path.commonprefix( random.sample(allpaths, min(SAVEPATH_SAMPLE_SIZE, len(allpaths))) )
             if (len(savepath) < MIN_SAVEPATH_LENGTH):
                 break
         if (len(savepath) < MIN_SAVEPATH_LENGTH):
