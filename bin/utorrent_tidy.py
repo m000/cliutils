@@ -18,13 +18,12 @@ import shutil
 import random
 import tempfile
 from pprint import pprint
+import argparse
 
 MIN_SAVEPATH_LENGTH = 3
 SAVEPATH_SAMPLE_SIZE = 10
 SAVEPATH_SAMPLE_RETRIES = 5
-MOVE_ACROSS_FILESYSTEMS = False
 HR_LENGTH = 70
-DRY_RUN = False
 
 try:
     import bencode
@@ -32,44 +31,53 @@ except ImportError:
     print("Please install the bencode python module. E.g.: sudo pip install bencode", file=sys.stderr)
 
 if __name__ == '__main__':
-
-    if len(sys.argv) < 3:
-        print("uTorrent tidy script. Moves completed files to directories matching their label. Writes a new resume data file.", file=sys.stderr)
-        print("Usage: %s <datfile> <newdatfile>" % (sys.argv[0]), file=sys.stderr)
-        sys.exit(1)
-
-    if not sys.argv[1].lower().endswith('.dat'):
-        print("File '%s' does not have a '.dat' extension." % (sys.argv[1]), file=sys.stderr)
-        sys.exit(1)
-
-    if not sys.argv[2].lower().endswith('.dat'):
-        print("File '%s' does not have a '.dat' extension." % (sys.argv[2]), file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='uTorrent tidy script. Moves completed files to directories matching their label. Writes a new resume data file.')
+    parser.add_argument("-n", "--dry-run",
+        action="store_true", dest="dryrun", default=False,
+        help="only print the actions to be performed"
+    )
+    parser.add_argument("-p", "--save-path",
+        action="store", dest="savepath", default=None,
+        help="manually set the torrent save path"
+    )
+    parser.add_argument("--xfs",
+        action="store_true", dest="xfs", default=False,
+        help="allow moving files across filesystems"
+    )
+    parser.add_argument('resumedat_in', help='input utorrent resume.dat file')
+    parser.add_argument('resumedat_out', help='output utorrent resume.dat file')
+    args = parser.parse_args()
 
     ################################################
     # Read resume data.
     ################################################
-    with open(sys.argv[1]) as dat_in:
+    with open(args.resumedat_in, 'rb') as dat_in:
         resume_dat = bencode.bdecode(dat_in.read())
+
+    print(HR_LENGTH*"*")
+    print("Dry Run: %s, Move Across FS: %s, Manual Savepath: %s" % (args.dryrun, args.xfs, args.savepath))
+    print(HR_LENGTH*"*")
 
     ################################################
     # Calculate the save path for the data.
     ################################################
-    allpaths = [ resume_dat[t]['path'] for t in resume_dat
+    if args.savepath:
+        savepath = args.savepath
+    else:
+        allpaths = [ resume_dat[t]['path'] for t in resume_dat
             if t.endswith('.torrent') and os.path.exists(resume_dat[t]['path'])
-    ]
-    savepath = os.path.commonprefix(allpaths)
-    if (len(savepath) < MIN_SAVEPATH_LENGTH):
-        # Failed to calculate savepath from all used paths. Try sampling.
-        for i in xrange(SAVEPATH_SAMPLE_RETRIES):
-            savepath = os.path.commonprefix( random.sample(allpaths, min(SAVEPATH_SAMPLE_SIZE, len(allpaths))) )
-            if (len(savepath) < MIN_SAVEPATH_LENGTH):
-                break
+        ]
+        savepath = os.path.commonprefix(allpaths)
         if (len(savepath) < MIN_SAVEPATH_LENGTH):
-            # TODO: Add support for a hardcoded fallback save path.
-            print("Could not calculate a savepath using sampling.", file=sys.stderr)
-            print("You may want to retry in a few secs, or reduce the SAVEPATH_SAMPLE_SIZE.", file=sys.stderr)
-            sys.exit(1)
+            # Failed to calculate savepath from all used paths. Try sampling.
+            for i in xrange(SAVEPATH_SAMPLE_RETRIES):
+                savepath = os.path.commonprefix( random.sample(allpaths, min(SAVEPATH_SAMPLE_SIZE, len(allpaths))) )
+                if (len(savepath) < MIN_SAVEPATH_LENGTH):
+                    break
+            if (len(savepath) < MIN_SAVEPATH_LENGTH):
+                print("Could not calculate a savepath using sampling.", file=sys.stderr)
+                print("You may want to retry in a few secs, or manually set the savepath.", file=sys.stderr)
+                sys.exit(1)
     print("Savepath is: %s." % (savepath))
 
     ################################################
@@ -95,7 +103,7 @@ if __name__ == '__main__':
             print("Skipping '%s'. Path does not exist." % (torrent))
             continue
         on_same_fs = lambda p1, p2: os.stat(p2).st_dev == os.stat(p2).st_dev
-        if not MOVE_ACROSS_FILESYSTEMS and not on_same_fs(metadata['path'], savepath):
+        if not args.xfs and not on_same_fs(metadata['path'], savepath):
             print("Skipping '%s'. Not on the same filesystem with savepath." % (torrent))
             continue
 
@@ -134,7 +142,7 @@ if __name__ == '__main__':
                 pass
 
             # Do the moving.
-            if not DRY_RUN:
+            if not args.dryrun:
                 shutil.move(path_orig, dir_dest)
             resume_dat[torrent]['path'] = path_dest
             print("mv '%s' '%s'" % (path_orig, dir_dest))
@@ -143,5 +151,5 @@ if __name__ == '__main__':
         ################################################
         # Write updated resume data.
         ################################################
-        with open(sys.argv[2],'wb+') as dat_out:
+        with open(args.resumedat_out,'wb+') as dat_out:
             dat_out.write(bencode.bencode(resume_dat))
