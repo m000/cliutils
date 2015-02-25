@@ -72,7 +72,7 @@ if __name__ == '__main__':
             # Failed to calculate savepath from all used paths. Try sampling.
             for i in xrange(SAVEPATH_SAMPLE_RETRIES):
                 savepath = os.path.commonprefix( random.sample(allpaths, min(SAVEPATH_SAMPLE_SIZE, len(allpaths))) )
-                if (len(savepath) < MIN_SAVEPATH_LENGTH):
+                if (len(savepath) >= MIN_SAVEPATH_LENGTH):
                     break
             if (len(savepath) < MIN_SAVEPATH_LENGTH):
                 print("Could not calculate a savepath using sampling.", file=sys.stderr)
