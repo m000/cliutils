@@ -1,0 +1,36 @@
+export SVN_EDITOR=vim
+
+function histdel() {
+    [ $# -eq 1 ] && history -d "$1" && history -w
+    if [ $# -eq 2 -a "$1" -le "$2" ]; then
+        for n in `seq "$2" "$1"`; do
+            history -d "$n"
+        done
+        history -w
+    fi
+}
+
+function rtmp_open() {
+    rtmpdump -b 3000 -v -r "$1" --quiet | /Applications/VLC.app/Contents/MacOS/VLC fd://0 --playlist-autostart
+}
+
+function vlc_stream_audio() {
+    local vlc="/Applications/VLC.app/Contents/MacOS/VLC"
+    "$vlc" "$1" --sout '#transcode{acodec=mp3,ab=96}:standard{mux=raw,dst=:8080/vlc.mp3,access=http}'  --no-sout-all --no-sout-video --no-video
+    #http://ebu_ios-i.akamaihd.net/hls/live/214400/ert/master.m3u8
+}
+
+{% include 'include/sh_alias.inc' %}
+export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
+export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+
+export LC_ALL=en_GB.UTF-8
+export LANG=en_GB.UTF-8
+
+{%- if os == "osx" %}
+export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
+{% endif %}
+
+{#
+# vim:ft=sh
+#}

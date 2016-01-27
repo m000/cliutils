@@ -1,0 +1,88 @@
+# Path to your oh-my-zsh configuration.
+ZSH=$HOME/.oh-my-zsh
+
+# Set name of the theme to load.
+# Look in ~/.oh-my-zsh/themes/
+# Optionally, if you set this to "random", it'll load a random theme each
+# time that oh-my-zsh is loaded.
+ZSH_THEME="gnzh"
+
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# Set to this to use case-sensitive completion
+# CASE_SENSITIVE="true"
+
+# Uncomment this to disable bi-weekly auto-update checks
+# DISABLE_AUTO_UPDATE="true"
+
+# Uncomment to change how often before auto-updates occur? (in days)
+# export UPDATE_ZSH_DAYS=13
+
+# Uncomment following line if you want to disable colors in ls
+# DISABLE_LS_COLORS="true"
+
+# Uncomment following line if you want to disable autosetting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment following line if you want to disable command autocorrection
+# DISABLE_CORRECTION="true"
+
+# Uncomment following line if you want red dots to be displayed while waiting for completion
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment following line if you want to disable marking untracked files under
+# VCS as dirty. This makes repository status check for large repositories much,
+# much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
+# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+plugins=(
+    osx git brew svn python pip Forklift terminalapp gnu-utils
+    history dirhistory last-working-dir sudo
+    catimg encode64 urltools nyan web-search
+)
+
+source $ZSH/oh-my-zsh.sh
+
+
+# Customize to your needs...
+autoload -U zmv
+autoload -U zcp
+
+#export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
+export HOMEBREW_PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/opt/homebrew/share/npm/bin
+export HOMEBIN_PATH="$HOME"/bin:"$HOME"/git/cliutils/bin:"$HOME"/.cabal/bin
+export PATH=$HOMEBREW_PATH:$PATH:$HOMEBIN_PATH:/opt/X11/bin:/usr/texbin
+export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
+export SVN_EDITOR=/opt/homebrew/bin/vim
+export EDITOR=/opt/homebrew/bin/vim
+export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
+
+export LC_CTYPE="en_GB.UTF-8"
+export LANG="en_GB.UTF-8"
+export LC_MONETARY="el_GR.UTF-8"
+export LC_TIME="el_GR.UTF-8"
+
+alias slt="open -a 'Sublime Text'"
+alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
+alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
+alias top='top -o cpu'
+alias tagit="open -a 'The Tagger'"
+alias STOP='killall -STOP'
+alias CONT='killall -CONT'
+alias nyancat='telnet nyancat.dakko.us'
+
+# OPAM configuration
+. /Users/mstamat/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+
+# Virtualenv Wrapper
+if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
+    export WORKON_HOME="$HOME"/Library/PyEnv
+    source /opt/homebrew/bin/virtualenvwrapper.sh
+fi
+
+

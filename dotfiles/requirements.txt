@@ -1,0 +1,5 @@
+Jinja2==2.8
+MarkupSafe==0.23
+PyYAML==3.11
+j2cli==0.3.1-0
+wsgiref==0.1.2
