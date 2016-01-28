@@ -32,3 +32,6 @@ need to activate the environment:
 * **copy-dry**: See what files will be copied to your home directory.
 * **copy-real**: Copy the generated files to your home directory.
 * **diff**: See the differences between generated and installed dot files.
+
+### Resources
+* [Jinja2 Template Designer Documentation](http://jinja.pocoo.org/docs/dev/templates/)

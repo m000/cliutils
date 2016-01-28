@@ -20,16 +20,11 @@ function vlc_stream_audio() {
     #http://ebu_ios-i.akamaihd.net/hls/live/214400/ert/master.m3u8
 }
 
-{% include 'include/sh_alias.inc' %}
-export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
-export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+{% include 'include/sh_env.inc' -%}
 
-export LC_ALL=en_GB.UTF-8
-export LANG=en_GB.UTF-8
+{% include 'include/sh_locale.inc' -%}
 
-{%- if os == "osx" %}
-export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
-{% endif %}
+{% include 'include/sh_alias.inc' -%}
 
 {#
 # vim:ft=sh

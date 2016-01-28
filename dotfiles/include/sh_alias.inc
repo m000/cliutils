@@ -1,4 +1,4 @@
-### generic aliases ##########################################################
+{{ "Generic aliases" | hr }}
 ### job control
 alias STOP='killall -STOP'
 alias CONT='killall -CONT'
@@ -11,26 +11,19 @@ alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
 
-{% if hostname == "dastardly" -%}
-### host-specific aliases for dastardly ######################################
-alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
-alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
-alias tagit="open -a 'The Tagger'"
-{% endif %}
-
+{{ ("OS-specific aliases for %s" % os) | hr }}
 {% if os == "osx" -%}
-### osx-specific aliases #####################################################
 alias ls='gls --color=tty'
 alias sed=gsed
 alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
 {%- elif os == "linux" -%}
-### linux-specific aliases ###################################################
+# nothing yet!
 {%- endif %}
 
+{{ ("Host-specific aliases for %s" % hostid) | hr }}
 {% if hostid == "dastardly-osx" -%}
-### host-specific aliases for dastardly-osx ##################################
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"

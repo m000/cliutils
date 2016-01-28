@@ -1,5 +1,9 @@
 {
     "hostid": "dastardly-osx",
     "hostname": "dastardly",
-    "os": "osx"
+    "os": "osx",
+    "path": {
+        "homebrew": "/opt/homebrew",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
 }

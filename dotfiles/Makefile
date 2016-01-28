@@ -9,6 +9,7 @@ RCFILES_OUT = $(patsubst %.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 RSYNC       = rsync
 DIFF        = diff
 GREP        = grep
+J2			= j2 -C
 
 
 
@@ -17,17 +18,17 @@ GREP        = grep
 
 all: $(RCFILES_OUT)
 
-copy-dry:
+copy-dry: all
 	$(RSYNC) -avPhi -n $(OUTDIR)/ $(HOME)/
 
-copy-real:
+copy-real: all
 	$(RSYNC) -avPhi $(OUTDIR)/ $(HOME)/
 
-diff:
+diff: all
 	$(DIFF) -wr $(OUTDIR)/ $(HOME)/ | $(GREP) -v "^Only in $(HOME)/:"
 
 $(OUTDIR)/.%rc: %rc.j2 $(CONFIG) $(wildcard include/*.inc)
-	j2 $< $(CONFIG) > $(@)
+	$(J2) $< $(CONFIG) > $(@)
 
 $(OUTDIR):
 	mkdir -p $@
