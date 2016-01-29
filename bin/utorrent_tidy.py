@@ -12,16 +12,12 @@
 
 from __future__ import print_function
 import os
-import os.path
 import sys
 import shutil
-import random
 import subprocess
-import tempfile
+import random
 from pprint import pprint
 import argparse
-
-
 
 try:
     import bencode
@@ -135,8 +131,7 @@ if __name__ == '__main__':
             continue
         if len(metadata['labels']) > 1:
             # This isn't possible AFAIK. Add a check nevertheless.
-            print("Too many labels for '%s'. Don't know how to handle them." % (torrent), file=sys.stderr)
-            sys.exit(1)
+            raise Exception("Multiple labels for '%s': %s. Don't know how to handle them." % (torrent, metadata['labels']))
         if metadata['completed_on'] == 0:
             print("Skipping '%s'. Not completed." % (torrent))
             continue
