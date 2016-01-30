@@ -25,6 +25,8 @@ do
     `mkvextract tracks "$filename" $tracknumber:"$subtitlename.srt.tmp" > /dev/null 2>&1`
     `chmod g+rw "$subtitlename.srt.tmp"`
 
+      #echo $subline $tracknumber $subtitlename
+      #continue
 
     # Do a super-primitive language guess: ENGLISH
     langtest=`egrep -ic ' you | to | the ' "$subtitlename".srt.tmp`
@@ -34,14 +36,15 @@ do
 
     # Check if subtitle passes our language filter (10 or more matches)
     if [ $langtest -ge 10 ]; then
+      `mv "$subtitlename.srt.tmp" "$subtitlename.en.srt" > /dev/null 2>&1`
       # Regex to remove credits at the end of subtitles (read my reason why!)
-      `sed 's/\r//g' < "$subtitlename.srt.tmp" \
-        | sed 's/%/%%/g' \
-        | awk '{if (a){printf("\t")};printf $0; a=1; } /^$/{print ""; a=0;}' \
-        | grep -iv "$trimregex" \
-        | sed 's/\t/\r\n/g' > "$subtitlename.srt"`
-      `rm "$subtitlename.srt.tmp"`
-      `chmod g+rw "$subtitlename.srt"`
+      #`sed 's/\r//g' < "$subtitlename.srt.tmp" \
+        #| sed 's/%/%%/g' \
+        #| awk '{if (a){printf("\t")};printf $0; a=1; } /^$/{print ""; a=0;}' \
+        #| grep -iv "$trimregex" \
+        #| sed 's/\t/\r\n/g' > "$subtitlename.srt"`
+      #`rm "$subtitlename.srt.tmp"`
+      `chmod g+rw "$subtitlename.en.srt"`
     else
       # Not our desired language: add a number to the filename and keep anyway, just in case
       `mv "$subtitlename.srt.tmp" "$subtitlename.$tracknumber.srt" > /dev/null 2>&1`

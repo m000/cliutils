@@ -203,6 +203,11 @@ def main():
         action="append", dest="tagpath", metavar='TAG:SAVEPATH',
         help="use SAVEPATH for labels tagged with TAG"
     )
+    # todo
+    # parser.add_argument("--rewrite-path",
+    #     action="append", dest="rewritepath", metaver='FROM:TO',
+    #     help="rewrite the save path without actually moving"
+    # )
     parser.add_argument("--xfs",
         action="store_true", dest="xfs", default=False,
         help="allow moving files across filesystems"
