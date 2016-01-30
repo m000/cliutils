@@ -11,21 +11,14 @@
 #
 
 from __future__ import print_function
-import os
-import sys
-import shutil
-import subprocess
+import os, sys, subprocess, shutil
+import re, argparse
 import random
 from pprint import pprint
-import argparse
 
-try:
-    import bencode
-except ImportError:
-    print("Please install the bencode python module. E.g.: sudo pip install bencode", file=sys.stderr)
 
 ###############################################################################
-#### Helpers ##################################################################
+#### Format helpers ###########################################################
 ###############################################################################
 def make_hr(text=None, width=None, fill='#'):
     ''' Creates an ascii horizontal ruler.'''
@@ -34,18 +27,50 @@ def make_hr(text=None, width=None, fill='#'):
         except: width = 80
     return ''.ljust(width, fill) if not text else ('%s %s ' % (3*fill, text)).ljust(width, fill)
 
-def print_hr(text=None, width=None, fill='#'):
+def print_hr(text=None, width=None, fill='#', file=sys.stdout):
     ''' Print an ascii horizontal ruler.'''
-    print(make_hr(text, width, fill))
+    print(make_hr(text, width, fill), file=file)
 
-def print_banner(lines=[], width=None, fill='#'):
+def print_banner(lines=[], width=None, fill='#', file=sys.stdout):
     ''' Prints the specified lines in a banner-like format.'''
     ljust_len = max([len(s) for s in lines])+1
-    print_hr(width=width, fill=fill)
+    print_hr(width=width, fill=fill, file=file)
     for l in lines:
-        print_hr(l.ljust(ljust_len), width=width, fill=fill)
-    print_hr(width=width, fill=fill)
+        print_hr(l.ljust(ljust_len), width=width, fill=fill, file=file)
+    print_hr(width=width, fill=fill, file=file)
 
+def fit_string(s, width, just='l', fill=' '):
+    ''' Fits string s to the specified width.'''
+    if len(s) > width:
+        scont = '...'
+        ltail = (width-len(scont))/2
+        lhead = width-len(scont)-ltail
+        s = '%s%s%s' % (s[:lhead], scont, s[-ltail:])
+    if just == 'r':
+        return s.rjust(width, fill)
+    elif just == 'c':
+        return s.center(width, fill)
+    else:
+        return s.ljust(width, fill)
+
+
+###############################################################################
+#### Influential imports ######################################################
+###############################################################################
+try:
+    import bencode
+except ImportError:
+    print_banner(["Please install the bencode python module. E.g.: sudo pip install bencode",], fill='!', file=sys.stderr)
+    raise
+try:
+    import emoji
+except ImportError:
+    print_hr("Consider installing the emoji python module for nicer output. E.g.: sudo pip install emoji", fill='!', file=sys.stderr)
+
+
+###############################################################################
+#### Functionality helpers ####################################################
+###############################################################################
 def guess_savepath(resume_dat):
     ''' Attempt to guess the save path for uTorrent data.
         This works as following:
@@ -74,19 +99,109 @@ def guess_savepath(resume_dat):
             raise Exception("Guessing of the uTorrent save path failed. You may want to retry in a few secs, or manually set the savepath.")
     return savepath
 
+def check_torrent(torrent, metadata, args, tagpath):
+    ''' Checks the torrent and its metadata to determine whether it
+        should be moved. For torrents that should be moved, a tuple
+        is returned. Otherwise a message is printed and None is returned.
+    '''
+    use_emojis = True if 'emoji' in sys.modules else False
+    if use_emojis:
+        emj = lambda s: emoji.emojize(s, use_aliases=True).encode('utf-8')
+
+    try: width = int(subprocess.check_output(['stty', 'size']).split()[1])
+    except: width = 80
+
+    def _make_message(torrent, action, reason):
+        values = {
+            'torrent': fit_string(torrent, width-20-5-6, 'l'),
+            'action': fit_string(action, 5, 'l'),
+            'reason': fit_string(reason, 20, 'c'),
+        }
+        if use_emojis:
+            if action == 'skip':
+                values['action'] = fit_string(emj(':no_entry:'), 4, 'l')
+            elif action == 'ok':
+                values['action'] = fit_string(emj(':checkered_flag:'), 5, 'l')
+            elif action == 'move':
+                values['action'] = fit_string(emj(':arrow_right:'), 4, 'l')
+            elif action == 'xfs':
+                values['action'] = fit_string(emj(':warning:'), 4, 'l')
+            elif action == 'wtf':
+                values['action'] = fit_string(emj(':interrobang:'), 4, 'l')
+            else:
+                values['action'] = fit_string(emj(':question:'), 4, 'l')
+        return '{action} | {torrent} | {reason}'.format(**values)             
+
+    if not torrent.endswith('.torrent'):
+        print(_make_message(torrent, 'skip', 'not a torrent'))
+        return None
+    if 'label' not in metadata:
+        print(_make_message(torrent, 'skip', 'no label'))
+        return None
+    if len(metadata['labels']) > 1:
+        print(_make_message(torrent, 'wtf', 'multiple labels'))
+        return None
+    if metadata['completed_on'] == 0:
+        print(_make_message(torrent, 'skip', 'incomplete'))
+        return None
+    if not os.path.exists(metadata['path']):
+        print(_make_message(torrent, 'skip', 'invalid path'))
+        return None
+
+    # Get path, label, tag.
+    p = metadata['path']
+    l = metadata['label']
+    t = None
+    if len(tagpath) > 1:
+        tagre = re.compile('\[([^]]*)\]\s*(.*)', re.UNICODE)
+        match = tagre.match(l)
+        if match:
+            t, l = match.groups()
+
+    # Make from/to directories.
+    d_from = os.path.dirname(p)
+    if t and t in tagpath:
+        d_to = os.path.join(tagpath[t], l)
+    else:
+        d_to = os.path.join(tagpath['default'], l)
+    p_to = os.path.join(d_to, os.path.basename(p))
+
+    # Check directories.
+    on_same_fs = lambda p1, p2: os.stat(p1).st_dev == os.stat(p2).st_dev
+    if d_from == d_to:
+        print(_make_message(torrent, 'ok', 'no action required'))
+        return None
+    elif not args.xfs and not on_same_fs(os.path.dirname(d_from), os.path.dirname(d_to)):
+        print(_make_message(torrent, 'xfs', 'xfs disabled'))
+        return None
+
+    # everything ok - return an action tuple
+    print(_make_message(torrent, 'move', 'move to %s' % (t if t else 'default')))
+    return (p, p_to, d_to)    
+
 
 ###############################################################################
 #### Real action ##############################################################
 ###############################################################################
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='uTorrent tidy script. Moves completed files to directories matching their label. Writes a new resume data file.')
+def main():
+    parser = argparse.ArgumentParser(description="""uTorrent tidy script.
+        Moves completed files to directories matching their label.
+        Writes a new resume data file.
+        By default, a single torrent save path is assumed. Multiple save paths
+        can be used though the --tag-path option which associates label tags to
+        specific save paths. The format for tagged labels is "[tag] label".
+    """)
     parser.add_argument("-n", "--dry-run",
         action="store_true", dest="dryrun", default=False,
         help="only print the actions to be performed"
     )
     parser.add_argument("-p", "--save-path",
         action="store", dest="savepath", default=None,
-        help="manually set the torrent save path"
+        help="manually set the default torrent save path"
+    )
+    parser.add_argument("-t", "--tag-path",
+        action="append", dest="tagpath", metavar='TAG:SAVEPATH',
+        help="use SAVEPATH for labels tagged with TAG"
     )
     parser.add_argument("--xfs",
         action="store_true", dest="xfs", default=False,
@@ -97,15 +212,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ################################################
-    # Read resume data and calculate save path.
+    # Read resume data and calculate save paths.
     ################################################
     with open(args.resumedat_in, 'rb') as dat_in:
         resume_dat = bencode.bdecode(dat_in.read())
 
-    if args.savepath:
-        savepath = args.savepath
-    else:
-        savepath = guess_savepath(resume_dat)
+    savepath = args.savepath if args.savepath else guess_savepath(resume_dat)
+    tagpath = dict([tp.split(':', 1) for tp in args.tagpath]) if args.tagpath else {}
+    tagpath['default'] = savepath
 
     ################################################
     # Print active configuration.
@@ -113,54 +227,32 @@ if __name__ == '__main__':
     cfg_banner = [ 
             'Dry Run: %s' % (args.dryrun),
             'Move Across FS: %s' % (args.xfs),
-            'Savepath: %s (%s)' % (savepath, 'guessed' if not args.savepath else 'user-set'),
+            'Savepath[default]: %s (%s)' % (savepath, 'guessed' if not args.savepath else 'user-set'),
     ]
+    for tp in tagpath.iteritems():
+        cfg_banner.append('Savepath[%s]: %s' % (tp))
     print_banner(cfg_banner)
-
+    print('')
+    
     ################################################
     # Check what has to be done.
     ################################################
+    print_banner(['Analyzing actions'])
     actions = {}
     for torrent, metadata in resume_dat.iteritems():
-        # not torrent
-        if not torrent.endswith('.torrent'):
-            print("Skipping '%s'. Not a torrent." % (torrent))
-            continue
-        if 'label' not in metadata:
-            print("Skipping '%s'. No label." % (torrent))
-            continue
-        if len(metadata['labels']) > 1:
-            # This isn't possible AFAIK. Add a check nevertheless.
-            raise Exception("Multiple labels for '%s': %s. Don't know how to handle them." % (torrent, metadata['labels']))
-        if metadata['completed_on'] == 0:
-            print("Skipping '%s'. Not completed." % (torrent))
-            continue
-        if not os.path.exists(metadata['path']):
-            print("Skipping '%s'. Path does not exist." % (torrent))
-            continue
-        on_same_fs = lambda p1, p2: os.stat(p2).st_dev == os.stat(p2).st_dev
-        if not args.xfs and not on_same_fs(metadata['path'], savepath):
-            print("Skipping '%s'. Not on the same filesystem with savepath." % (torrent))
-            continue
-
-        p = metadata['path']
-        l = metadata['label']
-        d_from = os.path.dirname(p)
-        d_to = os.path.join(savepath, l)
-        p_to = os.path.join(d_to, os.path.basename(p))
-
-        if d_from == d_to:
-            print("Skipping '%s'. Already in the correct directory." % (torrent))
-            continue
-
-        # everything ok, add an action
-        actions[torrent] = (p, p_to, d_to)
+        action = check_torrent(torrent, metadata, args, tagpath)
+        # everything ok, add an action.
+        if action:
+            actions[torrent] = action
+    print('')
 
     ################################################
     # Execute actions.
     ################################################
-    print_hr(fill='-')
+    print_banner(['Hammer time!%s' % (' (dry run)' if args.dryrun else '')])
     try:
+        if not actions:
+            print('Nothing to do!')
         for torrent in actions:
             path_orig, path_dest, dir_dest = actions[torrent]
 
@@ -189,3 +281,8 @@ if __name__ == '__main__':
         ################################################
         with open(args.resumedat_out,'wb+') as dat_out:
             dat_out.write(bencode.bencode(resume_dat))
+    print('Finished!')
+if __name__ == '__main__':
+    main()
+
+
