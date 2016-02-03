@@ -11,7 +11,7 @@ alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
 
-{{ ("OS-specific aliases for %s" % os) | hr }}
+{{ "OS-specific aliases for %s" | format(os) | hr }}
 {% if os == "osx" -%}
 alias ls='gls --color=tty'
 alias sed=gsed
@@ -22,7 +22,7 @@ alias top='top -o cpu'
 # nothing yet!
 {%- endif %}
 
-{{ ("Host-specific aliases for %s" % hostid) | hr }}
+{{ "Host-specific aliases for %s" | format(hostid) | hr }}
 {% if hostid == "dastardly-osx" -%}
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
