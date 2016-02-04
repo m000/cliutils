@@ -1,0 +1,8 @@
+{
+    "hostid": "debian64-linux",
+    "hostname": "debian64",
+    "os": "linux",
+    "path": {
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}

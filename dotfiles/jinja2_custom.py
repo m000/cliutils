@@ -6,9 +6,9 @@ from functools import partial
 
 assert sys.version_info >= (2,5), "Need at least Python 2.5."
 if sys.version_info < (3,0):
-    from shutil import which
-else:
     from shutilwhich import which
+else:
+    from shutil import which
 
 # Check ansible's extra filters for inspiration:
 #   https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter

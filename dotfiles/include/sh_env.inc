@@ -1,6 +1,6 @@
 {{ "Influential environment variables" | hr }}
 ### path
-{% if path.homebrew|sh_expand|is_dir -%}
+{% if path.homebrew is defined and path.homebrew|sh_expand|is_dir -%}
 export HOMEBREW_PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/opt/homebrew/share/npm/bin
 {%- endif %}
 export HOMEBIN_PATH="$HOME"/bin:"$HOME"/git/cliutils/bin:"$HOME"/.cabal/bin
