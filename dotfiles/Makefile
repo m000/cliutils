@@ -16,7 +16,7 @@ J2			= j2 -C
 
 .PHONY: all copy-dry copy-real
 
-all: $(RCFILES_OUT)
+all: $(OUTDIR) $(RCFILES_OUT)
 
 copy-dry: all
 	$(RSYNC) -avPhi -n $(OUTDIR)/ $(HOME)/
