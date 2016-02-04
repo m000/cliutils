@@ -34,3 +34,5 @@ FILTERS = {
     'is_file':          os.path.isfile,
     'is_dir':           os.path.isdir,
 }
+TESTS = {
+}
