@@ -25,7 +25,7 @@ copy-real: all
 	$(RSYNC) -avPhi $(OUTDIR)/ $(HOME)/
 
 diff: all
-	$(DIFF) -wr $(OUTDIR)/ $(HOME)/ | $(GREP) -v "^Only in $(HOME)/:"
+	$(DIFF) -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/:"
 
 $(OUTDIR)/.%rc: %rc.j2 $(CONFIG) $(wildcard include/*.inc)
 	$(J2) $< $(CONFIG) > $(@)

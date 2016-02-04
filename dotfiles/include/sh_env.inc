@@ -5,10 +5,10 @@ export HOMEBREW_PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/opt/homebrew/share/np
 {%- endif %}
 export HOMEBIN_PATH="$HOME"/bin:"$HOME"/git/cliutils/bin:"$HOME"/.cabal/bin
 export PATH=$HOMEBREW_PATH:$PATH:$HOMEBIN_PATH:/opt/X11/bin:/usr/texbin
-export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
-export SVN_EDITOR=/opt/homebrew/bin/vim
-export EDITOR=/opt/homebrew/bin/vim
-export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
+#export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
+#export SVN_EDITOR=/opt/homebrew/bin/vim
+#export EDITOR=/opt/homebrew/bin/vim
+#export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
 
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
 export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}

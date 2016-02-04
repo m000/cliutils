@@ -34,10 +34,18 @@ ZSH_THEME="gnzh"
 
 # Plugins to load. Plugin locations: ~/.oh-my-zsh/plugins/, ~/.oh-my-zsh/custom/plugins/
 plugins=(
-    osx git brew svn python pip Forklift terminalapp gnu-utils
-    history dirhistory last-working-dir sudo
+    git svn
+    python pip
+    sudo gnu-utils
+    history dirhistory last-working-dir
     catimg encode64 urltools nyan web-search
 )
+{% if os == "osx" -%}
+plugins+=(osx brew Forklift terminalapp)
+{%- elif os == "linux" -%}
+plugins+=(debian)
+{%- endif %}
+
 
 # Enable oh-my-zsh.
 source $ZSH/oh-my-zsh.sh
