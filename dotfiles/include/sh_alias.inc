@@ -30,6 +30,12 @@ alias tagit="open -a 'The Tagger'"
 {% endif %}
 
 {#-
+alias open="xdg-open"
+alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
+alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
+-}
+
+{#-
 ### old/disabled aliases #####################################################
 alias synergys='synergys -a 127.0.0.1 -f'
 # vim:ft=sh

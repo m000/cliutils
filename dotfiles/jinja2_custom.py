@@ -13,6 +13,8 @@ else:
 # Check ansible's extra filters for inspiration:
 #   https://github.com/ansible/ansible/tree/devel/lib/ansible/plugins/filter
 
+
+### Filters #########################################################
 def hr(text=None, width=80, fill='#'):
     ''' Creates an ascii horizontal ruler.
     '''
@@ -22,15 +24,49 @@ def hr(text=None, width=80, fill='#'):
         return ''.ljust(width, fill)
 
 
+### Tests ###########################################################
+def is_dir(d):
+    ''' Returns true if d is a directory.
+        Tilde and shell variables in d are expanded before testing.
+    '''
+    if not d:
+        return False
+    else:
+        d = os.path.expandvars(os.path.expanduser(d))
+        return os.path.isdir(d)
+
+def is_file(f):
+    ''' Returns true if f is a file.
+        Tilde and shell variables in f are expanded before testing.
+    '''
+    if not f:
+        return False
+    else:
+        f = os.path.expandvars(os.path.expanduser(f))
+        return os.path.isdir(f)
+
+def is_existing_binary(b):
+    ''' Returns true if an executable named b exists in the system.
+    '''
+    return True if which(b) else False
+
+
+### Dictionaries for auto-loading by j2cli ##########################
 FILTERS = {
     'hr':               hr,
-    'sh_expand':        lambda s: os.path.expandvars(os.path.expanduser(s)),
-    'sh_expanduser':    os.path.expanduser,
-    'sh_expandvars':    os.path.expandvars,
     'sh_quote':         pipes.quote,
     'sh_which':         which,
     'path_exists':      os.path.exists,
+    'path_expand':      lambda s: os.path.expandvars(os.path.expanduser(s)),
+    'path_join':        os.path.join,
     'basename':         os.path.basename,
-    'is_file':          os.path.isfile,
-    'is_dir':           os.path.isdir,
+
+    'sh_expand':        lambda s: os.path.expandvars(os.path.expanduser(s)),
+    'sh_expanduser':    os.path.expanduser,
+    'sh_expandvars':    os.path.expandvars,
+}
+TESTS = {
+    'dir':               is_dir,
+    'file':              is_file,
+    'existing_binary':   is_existing_binary,
 }

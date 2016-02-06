@@ -9,7 +9,7 @@ RCFILES_OUT = $(patsubst %.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 RSYNC       = rsync
 DIFF        = diff
 GREP        = grep
-J2			= j2 -C
+J2          = j2 -C --undefined=normal
 
 
 
