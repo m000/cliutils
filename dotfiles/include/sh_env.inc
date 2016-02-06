@@ -43,6 +43,11 @@ export PATH={{ path_env|join(':') }}
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
 #export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
 #export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# Virtualenv Wrapper
+if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
+    export WORKON_HOME="$HOME"/Library/PyEnv
+    source /opt/homebrew/bin/virtualenvwrapper.sh
+fi
 #}
 
 {%- if os == "osx" %}

@@ -34,9 +34,7 @@ ZSH_THEME="gnzh"
 
 # Plugins to load. Plugin locations: ~/.oh-my-zsh/plugins/, ~/.oh-my-zsh/custom/plugins/
 plugins=(
-    git svn
-    python pip
-    sudo gnu-utils
+    git svn python pip sudo gnu-utils
     history dirhistory last-working-dir
     catimg encode64 urltools nyan web-search
 )
@@ -57,15 +55,13 @@ autoload -U zcp
 
 {% include 'include/sh_env.inc' -%}
 {% include 'include/sh_locale.inc' -%}
-{% include 'include/sh_alias.inc' -%}
+{% include 'include/sh_alias.inc' %}
 
-# OPAM configuration
-. /Users/mstamat/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+{{ "Initialize other zsh-specific stuff" | hr }}
+{% if "$HOME/.opam/opam-init/init.zsh" is not file -%}
+### OPAM configuration
+. "$HOME"/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+{%- endif %}
 
-# Virtualenv Wrapper
-if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
-    export WORKON_HOME="$HOME"/Library/PyEnv
-    source /opt/homebrew/bin/virtualenvwrapper.sh
-fi
 
 

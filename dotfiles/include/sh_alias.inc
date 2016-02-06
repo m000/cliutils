@@ -18,8 +18,14 @@ alias sed=gsed
 alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
-{%- elif os == "linux" -%}
-# nothing yet!
+{%- elif os == "linux" %}
+{%- if 'xdg-open' is existing_binary -%}
+alias open="xdg-open"
+{% endif -%}
+
+{% if 'subl' is existing_binary -%}
+alias slt="subl"
+{%- endif -%}
 {%- endif %}
 
 {{ "Host-specific aliases for %s" | format(hostid) | hr }}
@@ -27,13 +33,9 @@ alias top='top -o cpu'
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"
-{% endif %}
-
-{#-
-alias open="xdg-open"
-alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
-alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
--}
+{%- else -%}
+# nothing yet!
+{%- endif %}
 
 {#-
 ### old/disabled aliases #####################################################
