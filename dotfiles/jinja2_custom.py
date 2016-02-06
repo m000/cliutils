@@ -70,5 +70,3 @@ TESTS = {
     'file':              is_file,
     'existing_binary':   is_existing_binary,
 }
-TESTS = {
-}
