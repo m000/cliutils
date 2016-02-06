@@ -1,21 +1,60 @@
 {{ "Influential environment variables" | hr }}
 ### path
-{% if path.homebrew is defined and path.homebrew|sh_expand|is_dir -%}
-export HOMEBREW_PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/opt/homebrew/share/npm/bin
-{%- endif %}
-export HOMEBIN_PATH="$HOME"/bin:"$HOME"/git/cliutils/bin:"$HOME"/.cabal/bin
-export PATH=$HOMEBREW_PATH:$PATH:$HOMEBIN_PATH:/opt/X11/bin:/usr/texbin
-export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
-export SVN_EDITOR=/opt/homebrew/bin/vim
-export EDITOR=/opt/homebrew/bin/vim
-export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
+{#-
+    To build the PATH environment variable we create a list which we then join and print.
+#}
+{% with -%}
+    {%- set path_env=['"$PATH"',] -%}
+    {#- Intel Pin -#}
+    {%- if path.pin is dir -%}
+        export PIN_HOME="{{path.pin}}"
+        {%- do path_env.append('"$PIN_HOME"/bin') -%}
+    {%- endif -%}
 
+    {#- Homebrew -#}
+    {%- if path.homebrew is dir -%}
+        export HOMEBREW_PATH="{{path.homebrew}}":"{{path.homebrew}}/sbin":"{{path.homebrew}}/share/npm/bin"
+        {%- do path_env.insert(0, '"$HOMEBREW_PATH"') -%}
+    {%- endif -%}
+
+    {#- Haskell package manager -#}
+    {%- if "$HOME/.cabal/bin" is dir -%}
+        {%- do path_env.insert(0, '"$HOME"/.cabal/bin') -%}
+    {%- endif -%}
+
+    {#- Home bin -#}
+    {%- if "$HOME/bin" is dir -%}
+        {%- do path_env.append('"$HOME"/bin') -%}
+    {%- endif -%}
+
+    {#- Cliutils -#}
+    {%- if path.cliutils is dir -%}
+        {%- do path_env.append('"%s"/bin' % (path.cliutils)) -%}
+    {%- endif -%}
+
+    {#- Output PATH #}
+export PATH={{ path_env|join(':') }}
+{%- endwith %}
+
+{#
+#export SVN_EDITOR=/opt/homebrew/bin/vim
+#export EDITOR=/opt/homebrew/bin/vim
+#export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
-export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
-export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
-
+#export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
+#export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# Virtualenv Wrapper
+if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
+    export WORKON_HOME="$HOME"/Library/PyEnv
+    source /opt/homebrew/bin/virtualenvwrapper.sh
+fi
+#}
 
 {%- if os == "osx" %}
 export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
+#export PATH=/opt/X11/bin:/usr/texbin
 {% endif %}
 
+{#-
+# vim:ft=sh
+-#}

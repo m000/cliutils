@@ -4,6 +4,7 @@
     "os": "osx",
     "path": {
         "homebrew": "/opt/homebrew",
+        "cliutils": "$HOME/git/cliutils",
         "ohmyzsh": "$HOME/.oh-my-zsh"
     }
 }
