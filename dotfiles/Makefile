@@ -3,8 +3,8 @@ KERNEL      = $(shell uname -s | tr A-Z a-z)
 OUTDIR      = output
 
 CONFIG      = config/$(HOSTNAME)-$(KERNEL).json
-RCFILES_IN  = $(wildcard *rc.j2)
-RCFILES_OUT = $(patsubst %.j2,$(OUTDIR)/.%,$(RCFILES_IN))
+RCFILES_IN  = $(wildcard _*.j2)
+RCFILES_OUT = $(patsubst _%.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 
 RSYNC       = rsync
 DIFF        = diff
@@ -30,7 +30,7 @@ copy-real: all
 diff: all
 	$(DIFF) -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/:" || true
 
-$(OUTDIR)/.%rc: %rc.j2 $(CONFIG) $(wildcard include/*.inc)
+$(OUTDIR)/.%: _%.j2 $(CONFIG) $(wildcard include/*.inc)
 	$(J2) $< $(CONFIG) > $(@)
 
 $(OUTDIR):
