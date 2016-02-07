@@ -1,0 +1,17 @@
+{%- with session=None -%}
+
+{%- if "i3" is installed -%}
+    {% set session="i3" %}
+{%- elif "mate-session" is installed -%}
+    {% set session="mate-session" %}
+{%- endif -%}
+
+{%- if "ck-launch-session" is not installed or session == None -%}
+# default X configuration
+. /etc/X11/xinit/xinitrc
+{%- else -%}
+exec ck-launch-session {{session}}
+{%- endif -%}
+
+{%- endwith %}
+

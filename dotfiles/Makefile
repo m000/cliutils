@@ -11,7 +11,10 @@ DIFF        = diff
 GREP        = grep
 J2          = j2 -C --undefined=normal
 
-
+# adjust RCFILES_OUT depending on kernel (i.e. OS)
+ifneq ($(KERNEL),linux)
+	RCFILES_OUT := $(filter-out $(OUTDIR)/.xinitrc,$(RCFILES_OUT))
+endif
 
 
 .PHONY: all copy-dry copy-real
