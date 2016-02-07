@@ -54,6 +54,7 @@ def is_installed(b):
 ### Dictionaries for auto-loading by j2cli ##########################
 FILTERS = {
     'hr':               hr,
+    'py_type':          type,
     'sh_quote':         pipes.quote,
     'sh_which':         which,
     'path_exists':      os.path.exists,

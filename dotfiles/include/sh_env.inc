@@ -5,6 +5,12 @@
 #}
 {% with -%}
     {%- set path_env=['"$PATH"',] -%}
+
+    {#- Add /sbin to path - contains ifconfig -#}
+    {%- if os == "linux" -%}
+        {%- do path_env.append('/sbin') -%}
+    {%- endif -%}
+
     {#- Intel Pin -#}
     {%- if path.pin is dir -%}
         export PIN_HOME="{{path.pin}}"
