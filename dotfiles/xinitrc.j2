@@ -4,6 +4,8 @@
     {% set session="i3" %}
 {%- elif "mate-session" is installed -%}
     {% set session="mate-session" %}
+{%- elif "twm" is installed -%}
+    {% set session="twm" %}
 {%- endif -%}
 
 {%- if "ck-launch-session" is not installed or session == None -%}
