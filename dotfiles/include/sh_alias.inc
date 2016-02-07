@@ -19,11 +19,11 @@ alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
 {%- elif os == "linux" %}
-{%- if 'xdg-open' is existing_binary -%}
+{%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
 {% endif -%}
 
-{% if 'subl' is existing_binary -%}
+{% if 'subl' is installed -%}
 alias slt="subl"
 {%- endif -%}
 {%- endif %}

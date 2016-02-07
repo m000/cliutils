@@ -45,8 +45,8 @@ def is_file(f):
         f = os.path.expandvars(os.path.expanduser(f))
         return os.path.isdir(f)
 
-def is_existing_binary(b):
-    ''' Returns true if an executable named b exists in the system.
+def is_installed(b):
+    ''' Returns true if an executable named b exists in the current path.
     '''
     return True if which(b) else False
 
@@ -68,5 +68,5 @@ FILTERS = {
 TESTS = {
     'dir':               is_dir,
     'file':              is_file,
-    'existing_binary':   is_existing_binary,
+    'installed':         is_installed,
 }
