@@ -33,17 +33,34 @@ ZSH_THEME="gnzh"
 #}
 
 # Plugins to load. Plugin locations: ~/.oh-my-zsh/plugins/, ~/.oh-my-zsh/custom/plugins/
-plugins=(
-    git svn python pip sudo gnu-utils
-    history dirhistory last-working-dir
-    catimg encode64 urltools nyan web-search
-)
-{% if os == "osx" -%}
-plugins+=(osx brew Forklift terminalapp)
-{%- elif os == "linux" -%}
-plugins+=(debian)
-{%- endif %}
+{% with plugins,lsep=([], "\n   ") -%}
+    {%- do plugins.append(lsep) -%}
 
+    {#- basic stuff - could add tests for installed utils -#}
+    {%- do plugins.extend(["git", "svn", "python", "pip", "sudo", "gnu-utils", lsep,]) -%}
+    {%- do plugins.extend(["history", "dirhistory", "last-working-dir", lsep,]) -%}
+    {%- do plugins.extend(["catimg", "encode64", "urltools", "nyan", "web-search", lsep,]) -%}
+
+    {#- clipcopy/clippaste wrappers -#}
+    {%- if "pbcopy" is installed or "xclip" is installed -%}
+        {%- do plugins.append("clipboard") -%}
+    {%- endif -%}
+
+    {#- os-specific plugins -#}
+    {% if os.type == "osx" -%}
+        {%- do plugins.extend(["osx", "brew", "terminalapp", "Forklift",]) -%}
+    {%- elif os.type == "linux" -%}
+        {%- if os.flavor == "debian" -%}
+            {%- do plugins.append("debian") -%}
+        {%- elif os.flavor == "ubuntu" -%}
+            {%- do plugins.append("ubuntu") -%}
+        {%- endif -%}
+    {%- endif -%}
+
+    {%- do plugins.append("\n") -%}
+
+plugins=({{ plugins|join(" ") }})
+{%- endwith %}
 
 # Enable oh-my-zsh.
 source $ZSH/oh-my-zsh.sh

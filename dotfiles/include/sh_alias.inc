@@ -11,14 +11,14 @@ alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
 
-{{ "OS-specific aliases for %s" | format(os) | hr }}
-{% if os == "osx" -%}
+{{ "OS-specific aliases for %s" | format(os.type) | hr }}
+{% if os.type == "osx" -%}
 alias ls='gls --color=tty'
 alias sed=gsed
 alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
-{%- elif os == "linux" %}
+{%- elif os.type == "linux" %}
 {%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
 {% endif -%}

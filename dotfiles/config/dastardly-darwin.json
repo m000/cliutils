@@ -1,7 +1,9 @@
 {
     "hostid": "dastardly-osx",
     "hostname": "dastardly",
-    "os": "osx",
+    "os": {
+         "type": "osx"
+    },
     "path": {
         "homebrew": "/opt/homebrew",
         "cliutils": "$HOME/git/cliutils",

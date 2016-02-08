@@ -7,7 +7,7 @@
     {%- set path_env=['"$PATH"',] -%}
 
     {#- Add /sbin to path - contains ifconfig -#}
-    {%- if os == "linux" -%}
+    {%- if os.type == "linux" -%}
         {%- do path_env.append('/sbin') -%}
     {%- endif -%}
 
@@ -56,7 +56,7 @@ if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
 fi
 #}
 
-{%- if os == "osx" %}
+{%- if os.type == "osx" %}
 export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
 #export PATH=/opt/X11/bin:/usr/texbin
 {% endif %}

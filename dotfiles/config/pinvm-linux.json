@@ -1,7 +1,10 @@
 {
     "hostid": "pinvm-linux",
     "hostname": "pinvm",
-    "os": "linux",
+    "os": {
+         "type": "linux",
+         "flavor": "debian"
+    },
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",

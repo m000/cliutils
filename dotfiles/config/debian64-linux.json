@@ -1,7 +1,10 @@
 {
     "hostid": "debian64-linux",
     "hostname": "debian64",
-    "os": "linux",
+    "os": {
+         "type": "linux",
+         "flavor": "debian"
+    },
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",
