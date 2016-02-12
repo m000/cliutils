@@ -3,6 +3,9 @@
 " |                              GUI stuff                                    |
 " -----------------------------------------------------------------------------  
 
+highlight OverLength ctermbg=red ctermfg=white guibg=#592929
+match OverLength /\%71v.\+/
+set colorcolumn=71
 
 " OS Specific *****************************************************************
 if has("gui_macvim")
@@ -17,12 +20,15 @@ if has("gui_macvim")
 
 elseif has("gui_gtk2")
 
+  "set guifont=Anonymous\ Pro\ 14
+  "set guifont=Anonymous\ Pro\ 24
   set guifont=Monaco
   set guioptions-=T  " remove toolbar
 
 elseif has("x11")
 elseif has("gui_win32")
 end
+
 
 " General *********************************************************************
 set anti " Antialias font

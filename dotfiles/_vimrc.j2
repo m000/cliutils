@@ -24,7 +24,7 @@
 " |   :call Tabstyle_spaces = set tab to 2 spaces                             |
 " |                                                                           |
 " | Put machine/user specific settings in ~/.vimrc.local                      |
-" -----------------------------------------------------------------------------  
+" -----------------------------------------------------------------------------
 
 
 set nocompatible
@@ -193,7 +193,7 @@ autocmd FileType ruby,eruby set omnifunc=rubycomplete#Complete
 " Hard to type *****************************************************************
 imap uu _
 imap hh =>
-imap aa @
+"imap aa @
 
 
 " -----------------------------------------------------------------------------  
@@ -268,8 +268,6 @@ map <Leader>rs :RS<CR>
   "" 
 "endif
 
-
-
 " -----------------------------------------------------------------------------  
 " |                               Startup                                     |
 " -----------------------------------------------------------------------------  
@@ -297,6 +295,13 @@ endif
 
 "autocmd User ~/git/some_folder/* call Tabstyle_spaces() | let g:force_xhtml=1
 
+" Try to guess proper indentation settings.
+" Plugin home: http://www.vim.org/scripts/script.php?script_id=1171
+autocmd BufReadPost * :DetectIndent 
+
 set modeline
 set modelines=2
 
+" SuperRetab
+" http://vim.wikia.com/wiki/Super_retab
+" command! -nargs=1 -range SuperRetab <line1>,<line2>s/\v%(^ *)@<= {<args>}/\t/g
