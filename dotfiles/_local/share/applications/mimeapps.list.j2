@@ -1,0 +1,16 @@
+[Default Applications]
+{% if os.type == "linux" -%}
+{#-
+   This setting is picked up by gtk.show_uri(), which is used
+   (among else) by terminator to open urls.
+-#}
+{%- for browser in browsers -%}
+    {%- set browser_launcher=("/usr/share/applications/%s.desktop" % (browser))  -%}
+    {%- if (browser is installed) and (browser_launcher is file) -%}
+x-scheme-handler/http={{ browser }}.desktop
+x-scheme-handler/https={{ browser }}.desktop
+    {% break %}
+    {%- endif -%}
+{%- endfor -%}
+{%- endif %}
+

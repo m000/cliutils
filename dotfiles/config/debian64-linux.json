@@ -1,6 +1,7 @@
 {
     "hostid": "debian64-linux",
     "hostname": "debian64",
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
     "os": {
          "type": "linux",
          "flavor": "debian"

@@ -43,7 +43,7 @@ def is_file(f):
         return False
     else:
         f = os.path.expandvars(os.path.expanduser(f))
-        return os.path.isdir(f)
+        return os.path.isfile(f)
 
 def is_installed(b):
     ''' Returns true if an executable named b exists in the current path.

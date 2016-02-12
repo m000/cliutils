@@ -1,6 +1,7 @@
 {
     "hostid": "pinvm-linux",
     "hostname": "pinvm",
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
     "os": {
          "type": "linux",
          "flavor": "debian"
