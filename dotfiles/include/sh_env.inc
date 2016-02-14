@@ -19,7 +19,7 @@
 
     {#- Homebrew -#}
     {%- if path.homebrew is dir -%}
-        export HOMEBREW_PATH="{{path.homebrew}}":"{{path.homebrew}}/sbin":"{{path.homebrew}}/share/npm/bin"
+        export HOMEBREW_PATH="{{path.homebrew}}/bin":"{{path.homebrew}}/sbin":"{{path.homebrew}}/share/npm/bin"
         {%- do path_env.insert(0, '"$HOMEBREW_PATH"') -%}
     {%- endif -%}
 
