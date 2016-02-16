@@ -13,8 +13,8 @@
 
     {#- Intel Pin -#}
     {%- if path.pin is dir -%}
-        export PIN_HOME="{{path.pin}}"
-        {%- do path_env.append('"$PIN_HOME"') -%}
+        export PIN_ROOT="{{path.pin}}"
+        {%- do path_env.append('"$PIN_ROOT"') -%}
     {%- endif -%}
 
     {#- Homebrew -#}
