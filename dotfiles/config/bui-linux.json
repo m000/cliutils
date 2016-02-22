@@ -1,0 +1,13 @@
+{
+    "hostid": "bui-linux",
+    "hostname": "bui",
+    "browsers": [],
+    "os": {
+         "type": "linux",
+         "flavor": "ubuntu"
+    },
+    "path": {
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}
