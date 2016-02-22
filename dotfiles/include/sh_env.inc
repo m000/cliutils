@@ -42,9 +42,13 @@
 export PATH={{ path_env|join(':') }}
 {%- endwith %}
 
+### other stuff
+{% if "vim" is installed -%}
+export EDITOR=vim
+export SVN_EDITOR=vim
+{%- endif %}
+
 {#
-#export SVN_EDITOR=/opt/homebrew/bin/vim
-#export EDITOR=/opt/homebrew/bin/vim
 #export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
 #export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
