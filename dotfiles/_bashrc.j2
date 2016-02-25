@@ -24,7 +24,13 @@ function vlc_stream_audio() {
 
 {% include 'include/sh_locale.inc' -%}
 
-{% include 'include/sh_alias.inc' -%}
+{% include 'include/sh_alias.inc' %}
+
+{{ "Initialize other bash-specific stuff" | hr }}
+{% if "$HOME/.opam/opam-init/init.sh" is file -%}
+### OPAM configuration
+. "$HOME"/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true
+{%- endif %}
 
 {#
 # vim:ft=sh

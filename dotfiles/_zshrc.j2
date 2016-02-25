@@ -75,10 +75,11 @@ autoload -U zcp
 {% include 'include/sh_alias.inc' %}
 
 {{ "Initialize other zsh-specific stuff" | hr }}
-{% if "$HOME/.opam/opam-init/init.zsh" is not file -%}
+{% if "$HOME/.opam/opam-init/init.zsh" is file -%}
 ### OPAM configuration
 . "$HOME"/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
 {%- endif %}
 
-
-
+{#
+# vim:ft=sh
+#}
