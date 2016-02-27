@@ -1,0 +1,14 @@
+{
+    "hostid": "skygrid-linux",
+    "hostname": "skygrid",
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
+    "os": {
+         "type": "linux",
+         "flavor": "ubuntu"
+    },
+    "path": {
+        "pin": "$HOME/software/pin",
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}
