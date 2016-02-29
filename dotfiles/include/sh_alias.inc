@@ -18,6 +18,7 @@ alias sed=gsed
 alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
+alias ldd='otool -L'
 {%- elif os.type == "linux" %}
 {%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
