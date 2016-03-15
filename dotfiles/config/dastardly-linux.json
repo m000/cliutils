@@ -1,0 +1,14 @@
+{
+    "hostid": "dastardly-linux",
+    "hostname": "dastardly",
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
+    "os": {
+         "type": "linux",
+         "flavor": "debian"
+    },
+    "path": {
+        "pin": "$HOME/software/pin",
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}
