@@ -1,0 +1,97 @@
+{% if os.type == "linux" -%}
+# Function for turning on/off dual monitor setup with i3.
+dualmonitor() {
+	local displays
+	local d1
+	local d2
+
+	displays=($(xrandr -q | grep ' connected' | cut -d\  -f1))
+
+	if [ $#displays -lt 2 ]; then
+		>&2 echo "Not enough displays..."
+		return 1
+	fi
+
+	# Decide on the layout based on keywords.
+	case "$2" in
+		swap)
+			d1=$displays[2]
+			d2=$displays[1]
+		;;
+		*)
+			d1=$displays[1]
+			d2=$displays[2]
+		;;
+	esac
+
+
+	# We use anonymous functions for cases.
+	case "$1" in
+		on) function {
+			local jqq
+			local wlist
+			local wmv
+			local wvisible
+
+			# Setup displays.
+			printf 'Primary display: %s, Secondary display: %s\n' "$d1" "$d2"
+			xrandr --output "$d1" --auto --output "$d2" --auto --right-of "$d1"
+			xrandr --output "$d1" --primary
+
+			# Get visible workspace from primary display.
+			jqq="$(printf '.[] | select(.output == "%s" and .visible == true).num' "$d1")"
+			wvisible="$(i3-msg -t get_workspaces | jq -r "$jqq")"
+
+			# Move some workspaces to new display.
+			jqq="$(printf '.[] | select(.output == "%s" and .num > 2).num' "$d1")"
+			wlist=($(i3-msg -t get_workspaces | jq -r "$jqq"))
+			for w in $wlist; do
+				wmv="$(printf 'workspace %s; move workspace to %s' "$w" "$d2")"
+				i3-msg "$wmv"
+			done
+
+			# Move to the primary display workspace.
+			i3-msg workspace "$wvisible"
+		};;
+		off) function {
+			local primaryd
+			local otherd
+			local wlist
+			local jqq
+			local wmv
+			local wvisible
+
+			# Get primary display from I3. Use jq raw output to exclude quotes.
+			primaryd=$(i3-msg -t get_outputs | jq -r '.[] | select(.primary == true).name')
+
+			# Get visible workspace from primary display.
+			jqq="$(printf '.[] | select(.output == "%s" and .visible == true).num' "$primaryd")"
+			wvisible="$(i3-msg -t get_workspaces | jq -r "$jqq")"
+
+			# Get list of workspaces in non-primary displays.
+			jqq="$(printf '.[] | select(.output != "%s").num' "$primaryd")"
+			wlist=($(i3-msg -t get_workspaces | jq -r "$jqq"))
+
+			# Gather workspaces to primary display.
+			for w in $wlist; do
+				wmv="$(printf 'workspace %s; move workspace to %s' "$w" "$primaryd")"
+				i3-msg "$wmv"
+			done
+
+			# Move to the primary display workspace.
+			i3-msg workspace "$wvisible"
+
+			# Turn off secondary displays.
+			otherd=($(i3-msg -t get_outputs | jq -r '.[] | select(.primary == false).name'))
+			for d in $otherd; do
+				xrandr --output "$d" --off
+			done
+		};;
+		*)
+		;;
+	esac
+}
+{%- endif %}
+
+# vim:ft=sh
+

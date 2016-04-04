@@ -38,8 +38,9 @@ alias tagit="open -a 'The Tagger'"
 # nothing yet!
 {%- endif %}
 
-{#-
+{#
 ### old/disabled aliases #####################################################
 alias synergys='synergys -a 127.0.0.1 -f'
 # vim:ft=sh
 -#}
+
