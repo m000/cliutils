@@ -1,4 +1,4 @@
-{% if os.type == "linux" -%}
+{% if ["xrandr", "i3-msg", "jq"] is installed -%}
 # Function for turning on/off dual monitor setup with i3.
 dualmonitor() {
 	local displays
