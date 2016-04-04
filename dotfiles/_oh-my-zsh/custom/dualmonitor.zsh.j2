@@ -7,11 +7,6 @@ dualmonitor() {
 
 	displays=($(xrandr -q | grep ' connected' | cut -d\  -f1))
 
-	if [ $#displays -lt 2 ]; then
-		>&2 echo "Not enough displays..."
-		return 1
-	fi
-
 	# Decide on the layout based on keywords.
 	case "$2" in
 		swap)
@@ -32,6 +27,12 @@ dualmonitor() {
 			local wlist
 			local wmv
 			local wvisible
+
+			# Check for displays.
+			if [ $#displays -lt 2 ]; then
+				>&2 echo "Not enough displays..."
+				return 1
+			fi
 
 			# Setup displays.
 			printf 'Primary display: %s, Secondary display: %s\n' "$d1" "$d2"
