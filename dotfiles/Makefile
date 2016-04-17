@@ -20,6 +20,10 @@ RCFILES_OUT     = $(patsubst _%.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 RCFILES_CP_FROM	= $(shell find _* -type f -not -iname '*.j2')
 RCFILES_CP_TO   = $(patsubst _%,$(OUTDIR)/.%,$(RCFILES_CP_FROM))
 
+# Exclude unwanted files from being copied.
+RCFILES_CP_TO	:= $(filter-out %.swp,$(RCFILES_CP_TO))
+RCFILES_CP_TO	:= $(filter-out %.swo,$(RCFILES_CP_TO))
+
 # adjust RCFILES_OUT depending on kernel (i.e. OS)
 ifneq ($(KERNEL),linux)
 	RCFILES_OUT := $(filter-out $(OUTDIR)/.x%,$(RCFILES_OUT))
