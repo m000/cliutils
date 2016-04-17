@@ -21,9 +21,9 @@ sleeptimer() {
 {%- if ["osascript"] is installed %}
 	{% if ["gdate"] is installed %}
 	local wakeup="$(gdate --date="+$seconds sec")"
-	echo "Sleeping for ${minutes}min. Wake up on: ${wakeup}"
+	echo "Waiting for ${minutes}min. Will sleep on: ${wakeup}"
 	{%- else %}
-	echo "Sleeping for ${minutes}min."
+	echo "Waiting for ${minutes}min."
 	{%- endif %}
 	echo "..."
 
