@@ -10,7 +10,7 @@ sleeptimer() {
 	{%- if ["osascript"] is not installed %}
 	echo >&2 "Not implemented for {{os.type}}."
 	return 1
-	{%- endif %}
+	{% endif %}
 
 	{#- Check for positive timeout. -#}
 	if [[ ! $seconds > 0 ]] then
