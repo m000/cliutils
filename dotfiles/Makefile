@@ -8,9 +8,18 @@ J2          = j2 -C --undefined=normal
 
 # Configuration variables, affecting the processing of templates.
 OUTDIR          = output
-HOSTNAME        = $(shell uname -n | cut -d. -f1)
+HOSTNAME        = $(shell uname -n)
+HOSTNAME_SHORT  = $(shell uname -n | cut -d. -f1)
 KERNEL          = $(shell uname -s | tr A-Z a-z)
+
+# Choose config file.
 CONFIG          = config/$(HOSTNAME)-$(KERNEL).json
+ifeq ($(realpath $(CONFIG)),)
+CONFIG          = config/$(HOSTNAME_SHORT)-$(KERNEL).json
+endif
+ifeq ($(realpath $(CONFIG)),)
+$(error No configuration file for this host)
+endif
 
 # Make a list of *.j2 files that should be compiled with j2cli.
 RCFILES_IN      = $(shell find _* -type f -iname '*.j2')
