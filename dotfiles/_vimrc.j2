@@ -11,7 +11,8 @@
 " |   ,p = go to previous file                                                |
 " |                                                                           |
 " |   hh = inserts '=>'                                                       |
-" |   aa = inserts '@'                                                        |
+" |   aa = inserts '@'   (DISABLED)                                           |
+" |   uu = inserts '_'   (DISABLED)                                           |
 " |                                                                           |
 " |   ,h = new horizontal window                                              |
 " |   ,v = new vertical window                                                |
@@ -83,10 +84,10 @@ set cursorline
 
 
 " Searching *******************************************************************
-set hlsearch  " highlight search
+set hlsearch   " highlight search
 set incsearch  " Incremental search, search as you type
 set ignorecase " Ignore case when searching 
-set smartcase " Ignore case when searching lowercase
+set smartcase  " Ignore case when searching lowercase
 
 
 " Colors **********************************************************************
@@ -102,6 +103,24 @@ set showcmd
 set ruler " Show ruler
 "set ch=2 " Make command line two lines high
 "match LongLineWarning '\%120v.*' " Error format when a line is longer than 120
+set laststatus=2                                "status line always on
+set statusline=%t                               "tail of the filename
+set statusline+=%{fugitive#statusline()}        "git status
+"set statusline+=[%{strlen(&fenc)?&fenc:'none'}, "file encoding
+"set statusline+=%{&ff}]                         "file format
+set statusline+=%h                              "help file flag
+set statusline+=%m                              "modified flag
+set statusline+=%r                              "read only flag
+set statusline+=%y                              "filetype
+set statusline+=%=                              "left/right separator
+set statusline+=%c,                             "cursor column
+set statusline+=%l/%L                           "cursor line/total lines
+set statusline+=\ %P                            "percent through file
+
+
+" Highlight Customizations ****************************************************
+highlight StatusLine ctermfg=3 ctermbg=9
+highlight LineNr ctermfg=4 ctermbg=0
 
 
 " Line Wrapping ***************************************************************
@@ -191,9 +210,9 @@ autocmd FileType ruby,eruby set omnifunc=rubycomplete#Complete
 
 
 " Hard to type *****************************************************************
-imap uu _
-imap hh =>
+"imap uu _
 "imap aa @
+imap hh =>
 
 
 " -----------------------------------------------------------------------------  
@@ -203,7 +222,7 @@ imap hh =>
 " NERDTree ********************************************************************
 :noremap <Leader>n :NERDTreeToggle<CR>
 let NERDTreeHijackNetrw=1 " User instead of Netrw when doing an edit /foobar
-let NERDTreeMouseMode=1 " Single click for everything
+let NERDTreeMouseMode=1   " Single click for everything
 
 
 " NERD Commenter **************************************************************
@@ -268,6 +287,7 @@ map <Leader>rs :RS<CR>
   "" 
 "endif
 
+
 " -----------------------------------------------------------------------------  
 " |                               Startup                                     |
 " -----------------------------------------------------------------------------  
@@ -275,9 +295,8 @@ map <Leader>rs :RS<CR>
 "autocmd VimEnter * exe 'NERDTree' | wincmd l 
 
 
-
 " -----------------------------------------------------------------------------  
-" |                               Host specific                               |
+" |                             Host specific                                 |
 " -----------------------------------------------------------------------------  
 if filereadable(expand("~/.vimrc.local"))
   source ~/.vimrc.local
