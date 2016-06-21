@@ -34,6 +34,7 @@ alias slt="subl"
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"
+alias xpra="/opt/homebrew/Caskroom/xpra/latest/Xpra.app/Contents/MacOS/Xpra"
 {%- else -%}
 # nothing yet!
 {%- endif %}
