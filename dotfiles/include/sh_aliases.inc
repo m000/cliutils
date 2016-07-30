@@ -10,6 +10,7 @@ alias sigmafix="sed -r 's/σ([^[:alpha:]]|$)/ς\1'/g"
 alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
+alias ts='date +"%Y-%m-%d %H:%M:%S"'
 
 {{ "OS-specific aliases for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}

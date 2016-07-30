@@ -38,7 +38,7 @@ ZSH_THEME="gnzh"
 
     {#- basic stuff - could add tests for installed utils -#}
     {%- do plugins.extend(["git", "svn", "python", "pip", "sudo", "gnu-utils", lsep,]) -%}
-    {%- do plugins.extend(["history", "dirhistory", "last-working-dir", lsep,]) -%}
+    {%- do plugins.extend(["history", "dirhistory", "last-working-dir", "jump", lsep,]) -%}
     {%- do plugins.extend(["catimg", "encode64", "urltools", "nyan", "web-search", lsep,]) -%}
 
     {#- clipcopy/clippaste wrappers -#}
@@ -73,6 +73,7 @@ autoload -U zcp
 {% include 'include/sh_env.inc' -%}
 {% include 'include/sh_locale.inc' -%}
 {% include 'include/sh_aliases.inc' -%}
+alias j=jump
 {% include 'include/sh_functions.inc' %}
 
 {{ "Initialize other zsh-specific stuff" | hr }}

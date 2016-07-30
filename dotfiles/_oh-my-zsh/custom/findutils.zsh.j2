@@ -1,0 +1,28 @@
+# find by file extension
+extfind() {
+	local namecase="i"
+	local nameexp=""
+	local dir="."
+
+	if [ -d "$1" ]; then
+		dir="$1"
+		shift
+	fi
+
+	# construct an array of -name/-iname arguments
+	nameexp=("-${namecase}name *.""$^@")
+
+	# join the array with "-o" and split on spaces
+	find "$dir" ${(j: -o :s: :)nameexp}
+
+{#-
+Reference:
+	http://unix.stackexchange.com/a/258928
+	http://stackoverflow.com/a/10796467
+	man zshexpn
+#}
+
+}
+
+# vim:ft=sh
+
