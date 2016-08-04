@@ -61,8 +61,10 @@ fi
 #}
 
 {%- if os.type == "osx" %}
-export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
-#export PATH=/opt/X11/bin:/usr/texbin
+{#- curl-ca-bundle has been deprecated #}
+{% if (path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt') is file %}
+export SSL_CERT_FILE={{(path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt')}}
+{% endif %}
 {% endif %}
 
 {#-
