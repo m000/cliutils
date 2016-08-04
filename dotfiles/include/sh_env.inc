@@ -53,6 +53,7 @@ export SVN_EDITOR=vim
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
 #export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
 #export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# export SSH_KEY_PATH="~/.ssh/dsa_id"
 # Virtualenv Wrapper
 if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
     export WORKON_HOME="$HOME"/Library/PyEnv
