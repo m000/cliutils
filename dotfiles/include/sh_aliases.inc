@@ -10,6 +10,7 @@ alias sigmafix="sed -r 's/σ([^[:alpha:]]|$)/ς\1'/g"
 alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
+alias ts='date +"%Y-%m-%d %H:%M:%S"'
 
 {{ "OS-specific aliases for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
@@ -34,12 +35,14 @@ alias slt="subl"
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"
+alias xpra="/opt/homebrew/Caskroom/xpra/latest/Xpra.app/Contents/MacOS/Xpra"
 {%- else -%}
 # nothing yet!
 {%- endif %}
 
-{#-
+{#
 ### old/disabled aliases #####################################################
 alias synergys='synergys -a 127.0.0.1 -f'
 # vim:ft=sh
 -#}
+

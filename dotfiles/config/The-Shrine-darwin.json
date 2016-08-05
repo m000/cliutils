@@ -1,0 +1,12 @@
+{
+    "hostid": "The-Shrine-osx",
+    "hostname": "The-Shrine",
+    "os": {
+         "type": "osx"
+    },
+    "path": {
+        "homebrew": "/opt/homebrew",
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}

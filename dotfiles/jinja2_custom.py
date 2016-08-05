@@ -47,8 +47,10 @@ def is_file(f):
 
 def is_installed(b):
     ''' Returns true if an executable named b exists in the current path.
+        b may also be a list of binaries.
     '''
-    return True if which(b) else False
+    blist = b if isinstance(b, list) else [b,]
+    return all([which(b) for b in blist])
 
 
 ### Dictionaries for auto-loading by j2cli ##########################

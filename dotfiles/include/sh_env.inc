@@ -53,6 +53,7 @@ export SVN_EDITOR=vim
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
 #export PYTHONPATH=/opt/homebrew/lib/python${PYTHONPATH:+:$PYTHONPATH}
 #export PATH="$HOME/.cabal/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# export SSH_KEY_PATH="~/.ssh/dsa_id"
 # Virtualenv Wrapper
 if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
     export WORKON_HOME="$HOME"/Library/PyEnv
@@ -61,8 +62,10 @@ fi
 #}
 
 {%- if os.type == "osx" %}
-export SSL_CERT_FILE=/opt/homebrew/opt/curl-ca-bundle/share/ca-bundle.crt
-#export PATH=/opt/X11/bin:/usr/texbin
+{#- curl-ca-bundle has been deprecated #}
+{% if (path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt') is file %}
+export SSL_CERT_FILE={{(path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt')}}
+{% endif %}
 {% endif %}
 
 {#-
