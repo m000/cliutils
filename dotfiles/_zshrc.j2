@@ -78,6 +78,7 @@ autoload -U zcp
 {% include 'include/sh_locale.inc' -%}
 {% include 'include/sh_aliases.inc' -%}
 alias j=jump
+unalias gm {#- conflicts with graphicsmagick #}
 {% include 'include/sh_functions.inc' %}
 
 {{ "Initialize other zsh-specific stuff" | hr }}

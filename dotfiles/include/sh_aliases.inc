@@ -31,7 +31,7 @@ alias slt="subl"
 {%- endif %}
 
 {{ "Host-specific aliases for %s" | format(hostid) | hr }}
-{% if hostid == "dastardly-osx" -%}
+{% if hostid == "The-Shrine-osx" -%}
 alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
 alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"
