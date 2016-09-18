@@ -11,6 +11,7 @@ alias gvimt='gvim --remote-tab'
 alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
 alias ts='date +"%Y-%m-%d %H:%M:%S"'
+alias vi=vim
 
 {{ "OS-specific aliases for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
