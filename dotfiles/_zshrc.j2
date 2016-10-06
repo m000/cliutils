@@ -42,6 +42,7 @@ ZSH_THEME="gnzh"
 
     {#- basic stuff - could add tests for installed utils -#}
     {%- do plugins.extend(["git", "svn", "python", "pip", "sudo", "gnu-utils", lsep,]) -%}
+    {%- do plugins.extend(["ssh-agent", lsep,]) -%}
     {%- do plugins.extend(["history", "dirhistory", "last-working-dir", "jump", lsep,]) -%}
     {%- do plugins.extend(["catimg", "encode64", "urltools", "nyan", "web-search", lsep,]) -%}
 
@@ -64,6 +65,10 @@ ZSH_THEME="gnzh"
     {%- do plugins.append("\n") -%}
 
 plugins=({{ plugins|join(" ") }})
+
+{%- if "ssh-agent" in plugins %}
+zstyle :omz:plugins:ssh-agent lifetime 10m
+{% endif -%}
 {%- endwith %}
 
 # Enable oh-my-zsh.
