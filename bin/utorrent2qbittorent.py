@@ -9,7 +9,7 @@ The purpose of the script is to:
     a. Remove the matching torrents from uTorrent's resume.dat.
     b. Move the download files from uTorrent download dir to
        qBittorrent download dir.
-    c. Copy the .torrent file in a directory so you can import
+    c. Export the .torrent file in a directory so you can import
        it to qBittorrent.
 
 Importing to qBittorrent is a three-step manual process:
@@ -17,26 +17,17 @@ Importing to qBittorrent is a three-step manual process:
     b. Force a recheck on the torrent data.
     c. Start the torrent.
 
-https://gist.github.com/danzig666/5468d7dc2f7421c887e7
+** SHUT DOWN uTorrent BEFORE RUNNING **
 
-    hash = Digest::SHA1.hexdigest(tfile['info'].bencode).downcase
-
-    Moves downloads from uTorrent dir to qBittorrent dir.
-    Labels may be used to organize files in subdirectories.
-    The .torrent files are copied in a specified dir so you
-    can import them from qBittorrent.
-
-    You are expected to import the files in a paused state so you
-    can force a check on them.
-    When moving to subdirectories, the corresponding settings must
-    be turned on in qBittorrent.
-
-    ** SHUT DOWN uTorrent BEFORE RUNNING **
+A more complete ruby script with similar goals can be found here:
+    https://gist.github.com/danzig666/5468d7dc2f7421c887e7
+The ruby script also converts metadata to qBittorrent format and
+imports them.
 '''
 
 from __future__ import print_function
 import os, sys, subprocess, shutil, datetime
-import re, argparse
+import re, hashlib, argparse
 from pprint import pprint
 
 ###############################################################################
@@ -81,8 +72,9 @@ def fit_string(s, width, just='l', fill=' '):
 ###############################################################################
 try:
     import bencode
+    import bendcode
 except ImportError:
-    print_banner(["Please install the bencode python module. E.g.: sudo pip install bencode",], fill='!', file=sys.stderr)
+    print_banner(["Please install the bencode/bendcode python modules. E.g.: sudo pip install bencode bendcode",], fill='!', file=sys.stderr)
     raise
 try:
     import emoji
@@ -105,6 +97,21 @@ def check_torrent(torrent, metadata, args):
     try: width = int(subprocess.check_output(['stty', 'size']).split()[1])
     except: width = 80
 
+    def _torrent_hash(torrent):
+        torrent_f = os.path.join(args.ut_path, torrent)
+        print(torrent_f)
+        with open(torrent_f, 'rb') as torrent_f_in:
+            d = torrent_f_in.read()
+            try: # try default bencode module - faster
+                metainfo = bencode.bdecode(d)
+            except bencode.BTL.BTFailure:
+                pass
+            try: # fallback to bendcode - more robust
+                metainfo = bendcode.decode(d)
+            except:
+                return None
+            return hashlib.sha1(bencode.bencode(metainfo['info'])).hexdigest()  
+
     def _make_message(torrent, action, reason):
         values = {
             'torrent': fit_string(torrent, width-20-5-6, 'l'),
@@ -126,13 +133,13 @@ def check_torrent(torrent, metadata, args):
                 values['action'] = fit_string(emj(':question:'), 4, 'l')
         return '{action} | {torrent} | {reason}'.format(**values)             
 
-    if not torrent.endswith('.torrent'):
+    if not torrent.endswith('.torrent'): # unresolved magnet links
         print(_make_message(torrent, 'skip', 'not a torrent'))
         return None
     if metadata['completed_on'] == 0 and not args.incomplete:
         print(_make_message(torrent, 'skip', 'incomplete'))
         return None
-    if os.path.exists(metadata['path']) and not args.incomplete:
+    if not os.path.exists(metadata['path']) and not args.incomplete:
         print(_make_message(torrent, 'skip', 'invalid path'))
         return None
     if len(metadata['labels']) > 1:
@@ -152,6 +159,14 @@ def check_torrent(torrent, metadata, args):
         else:
             print(_make_message(torrent, 'wtf', 'weird match config'))
             return None
+
+    # This is just an integrity check for now.
+    # Eventually, it can be used to directly import torrents into qBittorrent.
+    # Torrents are saved as thash.torrent along with a thash.fastresume file.
+    thash = _torrent_hash(torrent)
+    if thash is None:
+        print(_make_message(torrent, 'skip', 'bad torrent'))
+        return None
 
     # Get path, label, tag.
     p = metadata['path']
@@ -206,6 +221,12 @@ def main():
         action="store", type=int, dest="ndash", default=1,
         help="converts the specified number of dashes from the torrent tag/label to slashes (default: 1)"
     )
+    parser.add_argument("--ut-path", default=None,
+        action="store", dest="ut_path", help="set the uTorrent config path, in case it is not the one containing resume.dat"
+    )
+    parser.add_argument("-e", "--export-path", default=None,
+            action="store", dest="export_path", help="where to export the torrent files (default: home dir)"
+    )
     match = parser.add_mutually_exclusive_group(required=True)
     match.add_argument('--name', action="store", dest="name_re", help="only process torrents with caption matching this re")
     match.add_argument('--tag', action="store", dest="tag_re", help="only process torrents with labels matching this re")
@@ -224,11 +245,20 @@ def main():
         resume_dat = bencode.bdecode(resume_dat_in.read())
 
     ################################################
+    # Set uTorrent config path and torrent export path.
+    ################################################
+    if args.ut_path is None:
+        args.ut_path = os.path.dirname(os.path.abspath(resume_dat_f))
+    if args.export_path is None:
+        args.export_path = os.path.expanduser("~")
+
+    ################################################
     # Print active configuration.
     ################################################
     cfg_banner = [ 
             'Dry Run: %s' % (args.dryrun),
             'Move Across FS: %s' % (args.xfs),
+            'uTorrent config path: %s' % (args.ut_path),
             'qBittorrent download path: %s' % (args.qt_dlpath),
     ]
     print_banner(cfg_banner)
@@ -269,10 +299,13 @@ def main():
                 pass
 
             # Do the moving.
+            torrent_from = os.path.join(args.ut_path, torrent)
             if not args.dryrun:
                 shutil.move(path_orig, dir_dest)
+                shutil.move(torrent_from, args.export_path)
             del resume_dat[torrent]
             print("mv '%s' '%s'" % (path_orig, dir_dest))
+            print("mv '%s' '%s'" % (torrent_from, args.export_path))
             print_hr(fill='-')
     finally:
         ################################################
