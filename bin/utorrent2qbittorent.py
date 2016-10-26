@@ -308,18 +308,19 @@ def main():
             print("mv '%s' '%s'" % (torrent_from, args.export_path))
             print_hr(fill='-')
     finally:
-        ################################################
-        # Make a backup for resume.dat and write updated file.
-        ################################################
-        resume_dat_bak_f = '%s.%s.bak' % (resume_dat_f, datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
-        print("Making a backup of resume.dat to %s." % (resume_dat_bak_f))
-        if not args.dryrun:
-            shutil.copyfile(resume_dat_f, resume_dat_bak_f)
-        print("Writing new resume.dat to %s." % (resume_dat_f))
-        if not args.dryrun:
-            with open(resume_dat_f,'wb+') as resume_dat_out:
-                resume_dat_out.write(bencode.bencode(resume_dat))
-        print_hr(fill='-')
+        if actions:
+            ################################################
+            # Make a backup for resume.dat and write updated file.
+            ################################################
+            resume_dat_bak_f = '%s.%s.bak' % (resume_dat_f, datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+            print("Making a backup of resume.dat to %s." % (resume_dat_bak_f))
+            if not args.dryrun:
+                shutil.copyfile(resume_dat_f, resume_dat_bak_f)
+            print("Writing new resume.dat to %s." % (resume_dat_f))
+            if not args.dryrun:
+                with open(resume_dat_f,'wb+') as resume_dat_out:
+                    resume_dat_out.write(bencode.bencode(resume_dat))
+            print_hr(fill='-')
     print('Finished!')
 
 if __name__ == '__main__':
