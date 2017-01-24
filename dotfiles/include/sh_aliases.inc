@@ -25,10 +25,11 @@ alias ldd='otool -L'
 {%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
 {% endif -%}
-
 {% if 'subl' is installed -%}
 alias slt="subl"
 {%- endif -%}
+{%- elif os.type == "bsd" %}
+alias make=gmake
 {%- endif %}
 
 {{ "Host-specific aliases for %s" | format(hostid) | hr }}
