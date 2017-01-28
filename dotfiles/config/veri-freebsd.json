@@ -1,0 +1,13 @@
+{
+    "hostid": "veri-freebsd",
+    "hostname": "veri",
+    "browsers": [],
+    "os": {
+         "type": "bsd",
+         "flavor": "freebsd"
+    },
+    "path": {
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}
