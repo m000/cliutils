@@ -89,7 +89,7 @@ unalias gm {#- conflicts with graphicsmagick #}
 {{ "Initialize other zsh-specific stuff" | hr }}
 {% if "$HOME/.opam/opam-init/init.zsh" is file -%}
 ### OPAM configuration
-. "$HOME"/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+source "$HOME"/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
 {%- endif %}
 
 # git/svn prompt should not mark repository as dirty for untracked files
@@ -98,6 +98,10 @@ export DISABLE_UNTRACKED_FILES_DIRTY=true
 {% if "/opt/homebrew/share/zsh-completions"|path_exists %}
 {{ "Additional completions" | hr }}
 fpath=(/opt/homebrew/share/zsh-completions $fpath)
+{%- endif %}
+
+{% if "$HOME/.iterm2_shell_integration.zsh" is file -%}
+source "$HOME/.iterm2_shell_integration.zsh"
 {%- endif %}
 
 {#
