@@ -1,14 +1,12 @@
 {% if ["gm",] is installed -%}
 # wrappers for common graphicsmagick tasks
+unalias gm
 gmresize() {
-	local q
-	local s
-	local sm
-
-	q=${q:-"85"}
-	s=${s:-"1200"}
+	local q=${q:-"85"}
+	local s=${s:-"1200"}
+	local sm=$(echo "$s" | tr -dc ^)
 	s=$(echo "$s" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
-	sm=$(echo "$s" | tr -dc ^)
+
 
 	for f in "$@"; do
 		# extract extension for file
@@ -19,15 +17,15 @@ gmresize() {
 			continue
 		fi
 
-		# convert and store to temp file
-		temp==(gm convert -resize ${s}x${s}${sm} -quality "$q" "$f" ${fext}:-)
+		# resize and save to temp file, then overwrite original
+		mv -f =(gm convert -resize ${s}x${s}${sm} -quality "$q" "$f" ${fext}:-) "$f"
 
 		# check for failure and overwrite original
 		if [ "$?" != "0" ]; then
-			echo "Skipping '$f' (conversion failure)." 1>&2
+			echo "Conversion failure for '$f' (conversion failure)." 1>&2
 			continue
 		fi
-		mv -f "$temp" "$f"
+
 		gm identify "$f"
 	done
 }
