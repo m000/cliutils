@@ -46,13 +46,13 @@ endif
 all: $(RCFILES_OUT) $(RCFILES_CP_TO)
 
 copy-dry: all
-	$(RSYNC) -avPhi -n $(OUTDIR)/ $(HOME)/
+	$(RSYNC) --exclude-from=config/exclude.txt -avPhi -n $(OUTDIR)/ $(HOME)/
 
 copy-real: all
-	$(RSYNC) -avPhi $(OUTDIR)/ $(HOME)/
+	$(RSYNC) --exclude-from=config/exclude.txt -avPhi $(OUTDIR)/ $(HOME)/
 
 diff: all
-	$(DIFF) -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/[^:]*:" || true
+	$(DIFF) --exclude-from=config/exclude.txt -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/[^:]*:" || true
 
 $(OUTDIR)/.%: _% $(CONFIG)
 	@test -d $(@D) || $(MKDIR) $(@D)
