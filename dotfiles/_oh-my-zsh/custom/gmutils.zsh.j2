@@ -1,6 +1,5 @@
 {% if ["gm",] is installed -%}
-# wrappers for common graphicsmagick tasks
-unalias gm
+unalias gm {#- conflicts with graphicsmagick #}
 gmresize() {
 	local q=${q:-"85"}
 	local s=${s:-"1200"}
