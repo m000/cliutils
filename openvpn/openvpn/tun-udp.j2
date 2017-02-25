@@ -1,0 +1,26 @@
+dev tun0
+proto udp
+
+# tls setup
+ca __CAKEYS__/ca.crt
+cert ca/keys/bui.labs.vu.nl.crt
+key ca/keys/bui.labs.vu.nl.key
+dh ca/keys/dh4096.pem
+server 10.9.8.0 255.255.255.0
+
+log log/openvpn.log
+verb 3
+status log/openvpn-status.log
+user daemon
+group daemon
+
+comp-lzo
+keepalive 10 60
+ping-timer-rem
+persist-tun
+persist-key
+push "redirect-gateway def1"
+push "dhcp-option DNS 208.67.222.222"
+push "dhcp-option DNS 208.67.220.220"
+push "dhcp-option DOMAIN vu.nl"
+
