@@ -7,7 +7,9 @@ GREP        = grep
 J2          = j2 -C --undefined=normal
 
 # Configuration variables, affecting the processing of templates.
+INDIR			= input
 OUTDIR          = output
+DESTDIR			?= /etc
 HOSTNAME        = $(shell uname -n)
 HOSTNAME_SHORT  = $(shell uname -n | cut -d. -f1)
 KERNEL          = $(shell uname -s | tr A-Z a-z)
@@ -22,12 +24,12 @@ $(error No configuration file for this host)
 endif
 
 # Make a list of *.j2 files that should be compiled with j2cli.
-RCFILES_IN      = $(shell find _* -type f -iname '*.j2')
-RCFILES_OUT     = $(patsubst _%.j2,$(OUTDIR)/.%,$(RCFILES_IN))
+RCFILES_IN      = $(shell find $(INDIR) -type f -iname '*.j2')
+RCFILES_OUT     = $(patsubst $(INDIR)/%.j2,$(OUTDIR)/%,$(RCFILES_IN))
 
 # Anything inside a directory that is not a template is copied without processing.
-RCFILES_CP_FROM	= $(shell find _* -type f -not -iname '*.j2')
-RCFILES_CP_TO   = $(patsubst _%,$(OUTDIR)/.%,$(RCFILES_CP_FROM))
+RCFILES_CP_FROM	= $(shell find $(INDIR) -type f -not -iname '*.j2' -not -iname '.git*')
+RCFILES_CP_TO   = $(patsubst $(INDIR)/%,$(OUTDIR)/%,$(RCFILES_CP_FROM))
 
 # Exclude unwanted files from being copied.
 RCFILES_CP_TO	:= $(filter-out %.swp,$(RCFILES_CP_TO))
@@ -46,19 +48,19 @@ endif
 all: $(RCFILES_OUT) $(RCFILES_CP_TO)
 
 copy-dry: all
-	$(RSYNC) --exclude-from=config/exclude.txt -avPhi -n $(OUTDIR)/ $(HOME)/
+	$(RSYNC) --exclude-from=config/exclude.txt -avPhi -n $(OUTDIR)/ $(DESTDIR)/
 
 copy-real: all
-	$(RSYNC) --exclude-from=config/exclude.txt -avPhi $(OUTDIR)/ $(HOME)/
+	$(RSYNC) --exclude-from=config/exclude.txt -avPhi $(OUTDIR)/ $(DESTDIR)/
 
 diff: all
-	$(DIFF) --exclude-from=config/exclude.txt -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/[^:]*:" || true
+	$(DIFF) --exclude-from=config/exclude.txt -wr $(DESTDIR)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(DESTDIR)/[^:]*:" || true
 
-$(OUTDIR)/.%: _% $(CONFIG)
+$(OUTDIR)/%: $(INDIR)/% $(CONFIG)
 	@test -d $(@D) || $(MKDIR) $(@D)
 	$(CP) $(<) $(@)
 
-$(OUTDIR)/.%: _%.j2 $(CONFIG) $(wildcard include/*.inc)
+$(OUTDIR)/%: $(INDIR)/%.j2 $(CONFIG) $(wildcard include/*.inc)
 	@test -d $(@D) || $(MKDIR) $(@D)
 	$(J2) $(<) $(CONFIG) > $(@)
 

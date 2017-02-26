@@ -1,0 +1,27 @@
+{
+	"dev": "tun0",
+	"user": "daemon",
+	"group": "daemon",
+	"logdir": "log",
+	"statusdir": "status",
+
+	"proto": ["udp", "tcp"],
+	"dns": {
+		"servers": ["208.67.222.222", "208.67.220.220"],
+		"domain": "labs.vu.nl"
+	}
+}
+
+define(`__CA__', ``/etc/CA'')
+define(`__CA_KEYS__', __CA__``/keys'')
+define(`__CA_ROOTCRT__', ``bui.labs.vu.nl'')
+define(`__CA_DH__', ``dh4096'')
+
+divert(0)# M4 Generated OpenVPN Config
+
+ca __CA_KEYS__/ca.crt
+cert __CA_KEYS__/__CA_ROOTCRT__.crt
+key __CA_KEYS__/__CA_ROOTCRT__.key
+dh __CA_KEYS__/__CA_DH__.pem
+server 10.9.8.0 255.255.255.0
+

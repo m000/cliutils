@@ -11,13 +11,15 @@ The generated dot files are first written in a local directory
 
 ## Prerequisites
 
-### OpenVPN and EasyRSA
+### OpenVPN and Easy-RSA
 
 On the machine that you want to use as OpenVPN server, run as root:
 
 ```
 apt-get install openvpn easy-rsa
 ```
+
+Note that fore convenience, the Easy-RSA files are already included in the repository under [`openvpn/ca`](openvpn/ca).
 
 ### Python Environment
 
