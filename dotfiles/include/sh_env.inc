@@ -61,12 +61,19 @@ if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
 fi
 #}
 
-{%- if os.type == "osx" %}
+### os specific settings
+{% if os.type == "osx" -%}
 {#- curl-ca-bundle has been deprecated #}
 {% if (path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt') is file %}
 export SSL_CERT_FILE={{(path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt')}}
 {% endif %}
 {% endif %}
+
+### host specific settings
+{% if hostname == 'debian64' -%}
+ulimit -c unlimited
+{% endif %}
+
 
 {#-
 # vim:ft=sh
