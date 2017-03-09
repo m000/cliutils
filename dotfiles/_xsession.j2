@@ -1,5 +1,7 @@
 {%- with session=None -%}
-{%- if "i3" is installed -%}
+{%- if "cinnamon-session" is installed -%}
+    {% set session="cinnamon-session" %}
+{%- elif "i3" is installed -%}
     {% set session="i3" %}
 {%- elif "mate-session" is installed -%}
     {% set session="mate-session" %}
