@@ -26,7 +26,7 @@ RCFILES_IN      = $(shell find _* -type f -iname '*.j2')
 RCFILES_OUT     = $(patsubst _%.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 
 # Anything inside a directory that is not a template is copied without processing.
-RCFILES_CP_FROM	= $(shell find _* -type f -not -iname '*.j2')
+RCFILES_CP_FROM	= $(shell find _* \( -type f -or -type l \) -not -iname '*.j2')
 RCFILES_CP_TO   = $(patsubst _%,$(OUTDIR)/.%,$(RCFILES_CP_FROM))
 
 # Exclude unwanted files from being copied.
