@@ -39,6 +39,9 @@ ifneq ($(KERNEL),linux)
 	RCFILES_OUT := $(filter-out $(OUTDIR)/.i3/%,$(RCFILES_OUT))
 	RCFILES_OUT := $(filter-out $(OUTDIR)/.local/share/applications/%,$(RCFILES_OUT))
 endif
+ifneq ($(KERNEL),darwin)
+	RCFILES_OUT := $(filter-out $(OUTDIR)/.slate%,$(RCFILES_OUT))
+endif
 
 
 .PHONY: all copy-dry copy-real
