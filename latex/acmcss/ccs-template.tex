@@ -1,0 +1,63 @@
+\documentclass[sigconf, anonymous]{acmart}
+
+% Packages.
+\usepackage{ifxetex}
+\ifxetex
+  \newcommand{\texflavor}{xetex}
+\else
+  \usepackage[utf8]{inputenc}               % allow utf-8 text in the source
+  \usepackage[T1]{fontenc}                  % proper copy-paste from pdf (http://tex.stackexchange.com/a/677)
+  \newcommand{\texflavor}{pdftex}
+\fi
+\usepackage{xspace}                         % spacing
+\usepackage{amsmath,amssymb}                % improve math display
+\usepackage[inline]{enumitem}               % custom enumerations - inline enumerations
+\usepackage{caption}                        % caption customization
+\usepackage[font=footnotesize]{subcaption}  % sub-float support (replaces subfig)
+\usepackage{booktabs}                       % good-looking tables
+
+% Package options.
+\hypersetup{
+  pdfstartview=FitH,
+  colorlinks,
+  linkcolor=ACMDarkBlue,
+  citecolor=ACMDarkBlue,
+  urlcolor=ACMDarkBlue,
+  breaklinks=true,
+}
+
+% Convenience shortcuts.
+\newcommand{\ours}{{\em Our System}\xspace}
+\providecommand{\figurename}{Fig.}
+\newcommand{\code}[1]{{\texttt{#1}}}
+\newcommand{\tabref}[1]{\tablename~\ref{tab:#1}\xspace}
+\newcommand{\figref}[1]{\figurename~\ref{fig:#1}\xspace}
+\newcommand{\secref}[1]{\S\ref{section:#1}\xspace}
+\newcommand{\libdft}{{libdft}\xspace}
+
+% CCS-specific setup.
+\fancyhf{} % Remove fancy page headers 
+\fancyhead[C]{Anonymous Submision \#9999 to ACM CCS 2017} % TODO: replace 9999 with your paper number
+\fancyfoot[C]{\thepage}
+\setcopyright{none} % No copyright notice required for submissions
+\acmConference[Anonymous Submission to ACM CCS 2017]{ACM Conference on Computer and Communications Security}{Due 19 May 2017}{Dallas, Texas}
+\acmYear{2017}
+\settopmatter{printacmref=false, printccs=true, printfolios=true} % We want page numbers on submissions
+%%\ccsPaper{9999} % TODO: replace with your paper number once obtained
+
+\begin{document}
+
+\title{\ours: We Need a Title\xspace}
+\begin{abstract}
+Your abstract should go here. You will also need to upload a plain-text abstract into the web submission form.
+\end{abstract}
+\input{acm-classification}
+\keywords{we, need, some, keywords}
+\maketitle
+
+\input{ccs-body} % TODO: replace with your brilliant paper!
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{ccs-sample}
+
+\end{document}
