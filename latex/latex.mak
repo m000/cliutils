@@ -43,8 +43,8 @@ TEX_SRC_CR	= $(patsubst %.tex,%-cr.tex,$(TEX_SRC)) # CR files
 endif
 TEX_SRC_ALL	?= $(wildcard *.tex)
 BIB_SRC		?= $(wildcard *.bib)
-TEX_AUX		?= $(wildcard *.aux)
-TEX_BBL		?= $(patsubst %.aux,%.bbl,$(TEX_AUX))
+TEX_AUX		= $(patsubst %.tex,%.aux,$(TEX_SRC))
+TEX_BBL		= $(patsubst %.aux,%.bbl,$(TEX_AUX))
 TEX_SUP		?= $(wildcard *.cls *.bst *.sty)
 TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png)
 TEX_PLOT	?= $(wildcard plots/*.pdf plots/*.eps plots/*.png)
@@ -56,7 +56,7 @@ ZIPTARGET	?= $(notdir $(CURDIR)).zip				# EDIT: default name for zip file to be 
 ZIPTARGET	:= $(strip $(ZIPTARGET))
 ZIPDIR		= $(basename $(ZIPTARGET))				# temp directory for holding zipfile contents
 ZIPDIR		:= $(strip $(ZIPDIR))
-ZIP_CR_SRC	?= Makefile $(TEX_pdf) $(TEX_SRC_CR) $(TEX_FIG) $(TEX_PLOT) $(BIB_SRC) $(TEX_SUP)	# EDIT: files in the CR zip
+ZIP_CR_SRC	?= Makefile latex.mak $(TEX_pdf) $(TEX_SRC_CR) $(TEX_FIG) $(TEX_PLOT) $(BIB_SRC) $(TEX_SUP) $(ZIP_CR_SRC_EXTRA)	# EDIT: files in the CR zip
 ZIP_CR_CP	= $(addprefix $(ZIPDIR)/,$(ZIP_CR_SRC))
 
 
@@ -122,3 +122,6 @@ clean:
 
 distclean: clean
 	$(RM) $(DST)
+
+gitclean:
+	$(GIT) clean -fdx
