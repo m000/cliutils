@@ -1,0 +1,15 @@
+" SyntaxRange *****************************************************************
+:call SyntaxRange#Include('#begin=python#', '#end=python#', 'python', 'NonText')
+
+{% if path.pin is dir -%}
+" Intel Pin Types *************************************************************
+syn match cType "U\?INT\(8\|16\|32\|64\)"
+syn keyword cType ADDRINT BOOL
+
+syn match cppType "U\?INT\(8\|16\|32\|64\)"
+syn keyword cppType ADDRINT BOOL
+syn keyword cppBoolean TRUE FALSE
+{%- endif %}
+
+" vim:ft=vim
+
