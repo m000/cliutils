@@ -4,4 +4,3 @@ PyYAML==3.11
 exdoc==0.0.5-0
 -e git+git@github.com:m000/j2cli.git#egg=j2cli
 shutilwhich==1.1.0
-wsgiref==0.1.2

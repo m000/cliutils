@@ -22,7 +22,7 @@ $(error No configuration file for this host)
 endif
 
 # Make a list of *.j2 files that should be compiled with j2cli.
-RCFILES_IN      = $(shell find _* -type f -iname '*.j2')
+RCFILES_IN      = $(shell find _* \( -type f -or -type l \) -iname '*.j2')
 RCFILES_OUT     = $(patsubst _%.j2,$(OUTDIR)/.%,$(RCFILES_IN))
 
 # Anything inside a directory that is not a template is copied without processing.
@@ -32,6 +32,7 @@ RCFILES_CP_TO   = $(patsubst _%,$(OUTDIR)/.%,$(RCFILES_CP_FROM))
 # Exclude unwanted files from being copied.
 RCFILES_CP_TO	:= $(filter-out %.swp,$(RCFILES_CP_TO))
 RCFILES_CP_TO	:= $(filter-out %.swo,$(RCFILES_CP_TO))
+RCFILES_CP_TO	:= $(filter-out %.pyc,$(RCFILES_CP_TO))
 
 # adjust RCFILES_OUT depending on kernel (i.e. OS)
 ifneq ($(KERNEL),linux)
