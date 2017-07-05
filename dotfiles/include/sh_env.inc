@@ -5,6 +5,7 @@
 #}
 {% with -%}
     {%- set path_env=['"$PATH"',] -%}
+    {%- set exports=[] -%}
 
     {#- Add /sbin to path - contains ifconfig -#}
     {%- if os.type == "linux" -%}
@@ -13,13 +14,19 @@
 
     {#- Intel Pin -#}
     {%- if path.pin is dir -%}
-        export PIN_ROOT="{{path.pin}}"
+        {%- do exports.append(('PIN_ROOT', '"{0}"'.format(path.pin))) -%}
         {%- do path_env.append('"$PIN_ROOT"') -%}
+    {%- endif -%}
+
+    {#- LLVM -#}
+    {%- if path.llvm is dir -%}
+        {%- do exports.append(('LLVM_ROOT', '"{0}"'.format(path.llvm))) -%}
+        {%- do path_env.insert(0, '"$LLVM_ROOT/bin"') -%}
     {%- endif -%}
 
     {#- Homebrew -#}
     {%- if path.homebrew is dir -%}
-        export HOMEBREW_PATH="{{path.homebrew}}/bin":"{{path.homebrew}}/sbin":"{{path.homebrew}}/share/npm/bin"
+        {%- do exports.append(('HOMEBREW_PATH', '"{0}/bin":"{0}/sbin":"{0}/share/npm/bin"'.format(path.homebrew))) -%}
         {%- do path_env.insert(0, '"$HOMEBREW_PATH"') -%}
     {%- endif -%}
 
@@ -30,6 +37,7 @@
 
     {#- Home bin -#}
     {%- if "$HOME/bin" is dir -%}
+        {%- do exports.append(('HOMEBREW_PATH', '"{0}/bin":"{0}/sbin":"{0}/share/npm/bin"'.format(path.llvm))) -%}
         {%- do path_env.append('"$HOME"/bin') -%}
     {%- endif -%}
 
@@ -38,7 +46,10 @@
         {%- do path_env.append('"%s"/bin' % (path.cliutils)) -%}
     {%- endif -%}
 
-    {#- Output PATH #}
+    {#- Output exports and PATH #}
+{%- for k, v in exports -%}
+export {{k}}={{v}}
+{% endfor -%}
 export PATH={{ path_env|join(':') }}
 {%- endwith %}
 
