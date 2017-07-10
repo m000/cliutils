@@ -37,7 +37,6 @@
 
     {#- Home bin -#}
     {%- if "$HOME/bin" is dir -%}
-        {%- do exports.append(('HOMEBREW_PATH', '"{0}/bin":"{0}/sbin":"{0}/share/npm/bin"'.format(path.llvm))) -%}
         {%- do path_env.append('"$HOME"/bin') -%}
     {%- endif -%}
 
