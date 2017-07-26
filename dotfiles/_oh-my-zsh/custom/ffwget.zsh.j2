@@ -1,5 +1,5 @@
+# wget wrapper which uses Firefox cookies.
 {% if "sqlite3" is installed -%}
-# Wget wrapper which uses Firefox cookies.
 ffwget() {
 	local FFPROF_DEFAULT
 	local FFPROF
@@ -50,6 +50,8 @@ ffwget() {
 	) $@
 	rm -f "$COOKIEJAR_TMP"
 }
+{%- else %}
+# not available in this setup
 {%- endif %}
 
 # vim:ft=sh

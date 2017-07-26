@@ -1,0 +1,24 @@
+# show space that will be freed by purging a debian package
+{% if "apt-get" is installed -%}
+space_freed(){
+    local SUDO="sudo"
+
+    if [[ $# == 0 ]]; then
+        echo "no arguments supplied" >&2
+        return 1
+    fi
+
+    if [[ $UID == 0 || $EUID == 0 ]]; then
+        SUDO=""
+    fi
+
+    $SUDO apt-get --assume-no --purge remove "$@" |
+        grep "freed.$" |
+        awk '{print $4, $5}' 
+}
+# based on https://superuser.com/a/696094/70683
+{% else %}
+# not available in this setup
+{%- endif %}
+
+# vim:ft=sh

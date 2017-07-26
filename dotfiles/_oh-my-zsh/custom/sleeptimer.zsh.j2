@@ -29,6 +29,8 @@ sleeptimer() {
 
 	sleep "$seconds"
 	osascript -e 'tell application "System Events" to sleep'
+{%- else %}
+# not available in this setup
 {%- endif %}
 }
 
