@@ -1,5 +1,5 @@
-Jinja2==2.8
-MarkupSafe==0.23
+Jinja2==2.9.6
+MarkupSafe==1.0
 PyYAML==3.11
 exdoc==0.0.5-0
 -e git+git@github.com:m000/j2cli.git#egg=j2cli
