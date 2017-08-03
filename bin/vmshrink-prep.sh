@@ -1,4 +1,9 @@
 #!/bin/bash
+# Script for preparing VM disks for shrinking/compacting.
+# After running the script, poweroff and use VBoxManage to compact the image:
+#   VBoxManage modifyhd --compact foo.vdi
+#
+# Short url: http://bit.ly/vmshrink-prep
 
 SCRIPT="$(basename "$0")"
 DDBLOCK=8192
