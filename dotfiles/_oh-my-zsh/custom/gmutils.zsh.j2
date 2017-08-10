@@ -1,6 +1,7 @@
 # quick batch image resize with graphicsmagick
-{% if ["gm",] is installed -%}
-unalias gm {#- conflicts with graphicsmagick #}
+{% if ["gm",] is installed %}
+{# conflicts with graphicsmagick #}
+unalias gm
 gmresize() {
 	local q=${q:-"85"}
 	local s=${s:-"1200"}
@@ -29,9 +30,9 @@ gmresize() {
 		gm identify "$f"
 	done
 }
-{%- else %}
+{% else %}
 # not available in this setup
-{%- endif %}
+{% endif %}
 
 # vim:ft=sh
 

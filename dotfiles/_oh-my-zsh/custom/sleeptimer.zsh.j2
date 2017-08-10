@@ -6,32 +6,32 @@ sleeptimer() {
 	# Trim to integer.
 	seconds=${seconds%.*}
 
-	{# Check for tools. -#}
-	{%- if ["osascript"] is not installed %}
+	{# Check for tools. #}
+	{% if ["osascript"] is not installed %}
 	echo >&2 "Not implemented for {{os.type}}."
 	return 1
 	{% endif %}
 
-	{#- Check for positive timeout. -#}
+	{# Check for positive timeout. #}
 	if [[ ! $seconds > 0 ]] then
 		echo >&2 "Sleep timeout evaluates to $seconds. Aborting."
 		return 1
 	fi
 
-{%- if ["osascript"] is installed %}
+{% if ["osascript"] is installed %}
 	{% if ["gdate"] is installed %}
 	local wakeup="$(gdate --date="+$seconds sec")"
 	echo "Waiting for ${minutes}min. Will sleep on: ${wakeup}"
-	{%- else %}
+	{% else %}
 	echo "Waiting for ${minutes}min."
-	{%- endif %}
+	{% endif %}
 	echo "..."
 
 	sleep "$seconds"
 	osascript -e 'tell application "System Events" to sleep'
-{%- else %}
+{% else %}
 # not available in this setup
-{%- endif %}
+{% endif %}
 }
 
 # vim:ft=sh

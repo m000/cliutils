@@ -15,7 +15,7 @@ extfind() {
 	# join the array with "-o" and split on spaces
 	find "$dir" ${(j: -o :s: :)nameexp}
 
-{#-
+{#
 Reference:
 	http://unix.stackexchange.com/a/258928
 	http://stackoverflow.com/a/10796467

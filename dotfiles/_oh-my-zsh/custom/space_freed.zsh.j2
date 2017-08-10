@@ -1,5 +1,5 @@
 # show space that will be freed by purging a debian package
-{% if "apt-get" is installed -%}
+{% if "apt-get" is installed %}
 space_freed(){
     local SUDO="sudo"
 
@@ -19,6 +19,6 @@ space_freed(){
 # based on https://superuser.com/a/696094/70683
 {% else %}
 # not available in this setup
-{%- endif %}
+{% endif %}
 
 # vim:ft=sh

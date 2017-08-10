@@ -1,8 +1,6 @@
 {{ "Influential environment variables" | hr }}
 ### path
-{#-
-    To build the PATH environment variable we create a list which we then join and print.
-#}
+{# To build the PATH environment variable we create a list which we then join and print.  #}
 {% with -%}
     {%- set path_env=['"$PATH"',] -%}
     {%- set exports=[] -%}

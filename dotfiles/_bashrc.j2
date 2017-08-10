@@ -20,16 +20,16 @@ function vlc_stream_audio() {
     #http://ebu_ios-i.akamaihd.net/hls/live/214400/ert/master.m3u8
 }
 
-{% include 'include/sh_env.inc' -%}
-{% include 'include/sh_locale.inc' -%}
-{% include 'include/sh_aliases.inc' -%}
-{% include 'include/sh_functions.inc' %}
+{%+ include 'include/sh_env.inc' %}
+{%+ include 'include/sh_locale.inc' %}
+{%+ include 'include/sh_aliases.inc' %}
+{%+ include 'include/sh_functions.inc' %}
 
 {{ "Initialize other bash-specific stuff" | hr }}
-{% if "$HOME/.opam/opam-init/init.sh" is file -%}
+{% if "$HOME/.opam/opam-init/init.sh" is file %}
 ### OPAM configuration
 . "$HOME"/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true
-{%- endif %}
+{% endif %}
 
 {#
 # vim:ft=sh

@@ -1,5 +1,5 @@
 # wget wrapper which uses Firefox cookies.
-{% if "sqlite3" is installed -%}
+{% if "sqlite3" is installed %}
 ffwget() {
 	local FFPROF_DEFAULT
 	local FFPROF
@@ -8,13 +8,13 @@ ffwget() {
 	local FFWGET_HOST_SAFE
 	local FFWGET_HOST_SELECT
 
-	{% if os.type == "osx" -%}
+	{% if os.type == "osx" %}
 	FFPROF_DEFAULT="$(echo "$HOME/Library/Application Support/Firefox/Profiles"/*.default)"
 	{% elif os.type == "linux" %}
 	FFPROF_DEFAULT="$(echo "$HOME/.mozilla/firefox"/*.default)"
 	{% else %}
 	FFPROF_DEFAULT=""
-	{% endif -%}
+	{% endif %}
 
 	COOKIEJAR=${FFPROF:="$FFPROF_DEFAULT"}/cookies.sqlite
 	COOKIEJAR_TMP="${COOKIEJAR%%.sqlite}".ffwget$$.sqlite
@@ -50,8 +50,8 @@ ffwget() {
 	) $@
 	rm -f "$COOKIEJAR_TMP"
 }
-{%- else %}
+{% else %}
 # not available in this setup
-{%- endif %}
+{% endif %}
 
 # vim:ft=sh
