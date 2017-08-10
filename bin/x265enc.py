@@ -52,13 +52,13 @@ def make_ffmpeg_args(args):
 
     # parse video filters
     vf = []
+    if args.unsharp > 0:
+        vf.append("unsharp=%s" % UNSHARP_PRESETS[args.unsharp])
     if args.vscale > 0:
         vf.append("scale=-1:%d" % args.vscale)
         output_file['size'] = '%dp' % args.vscale
     else:
         output_file['size'] = 'noscale'
-    if args.unsharp > 0:
-        vf.append("unsharp=%s" % UNSHARP_PRESETS[args.unsharp])
     if vf:
         ffmpeg_args['vfilter'].extend(('-vf', ','.join(vf)))
 
