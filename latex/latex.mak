@@ -36,8 +36,8 @@ MD_txt		= $(patsubst %.md,%.txt,$(MD_SRC))
 MD_pdf		= $(patsubst %.md,%.pdf,$(MD_SRC))
 
 # Plots:
-GPL_SRC		?= $(wildcard plots/*.gpl)
-GPL_pdf		?= $(patsubst %.gpl,%.pdf,$(GPL_SRC))
+GP_SRC		?= $(wildcard plots/*.gp)
+GP_pdf		?= $(patsubst %.gp,%.pdf,$(GP_SRC))
 
 # LaTeX:
 TEX_SRC		?= $(wildcard paper*.tex)				# EDIT: default for top-level tex files ti process
@@ -51,7 +51,7 @@ BIB_SRC		?= $(wildcard *.bib)
 TEX_AUX		= $(patsubst %.tex,%.aux,$(TEX_SRC))
 TEX_BBL		= $(patsubst %.aux,%.bbl,$(TEX_AUX))
 TEX_SUP		?= $(wildcard *.cls *.bst *.sty)
-TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png)
+TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png figures/*.pdf figures/*.eps figures/*.png)
 TEX_CLEAN	?= $(wildcard *.log *.aux *.blg *.bbl *.out *.nav *.snm *.toc *.vrb)
 TEX_pdf		= $(patsubst %.tex,%.pdf,$(TEX_SRC))
 
@@ -60,7 +60,7 @@ ZIPTARGET	?= $(notdir $(CURDIR)).zip				# EDIT: default name for zip file to be 
 ZIPTARGET	:= $(strip $(ZIPTARGET))
 ZIPDIR		= $(basename $(ZIPTARGET))				# temp directory for holding zipfile contents
 ZIPDIR		:= $(strip $(ZIPDIR))
-ZIP_CR_SRC	?= Makefile latex.mak $(TEX_pdf) $(TEX_SRC_CR) $(TEX_FIG) $(GPL_pdf) $(BIB_SRC) $(TEX_SUP) $(ZIP_CR_SRC_EXTRA)	# EDIT: files in the CR zip
+ZIP_CR_SRC	?= Makefile latex.mak $(TEX_pdf) $(TEX_SRC_CR) $(TEX_FIG) $(GP_pdf) $(BIB_SRC) $(TEX_SUP) $(ZIP_CR_SRC_EXTRA)	# EDIT: files in the CR zip
 ZIP_CR_CP	= $(addprefix $(ZIPDIR)/,$(ZIP_CR_SRC))
 
 
@@ -80,16 +80,19 @@ ZIPEXCLUDE				?=							# EDIT: e.g. "-x v.pdf trip.pdf"
 %.tex %.pdf: %.md
 	$(PANDOC) --standalone --normalize -f markdown-hard_line_breaks -t latex -o $(@) $(<)
 
-plots/%.pdf: plots/%.gpl plots/%.csv
+plots/%.pdf: plots/%.gp plots/%.csv
 	cd $(dir $(<)) && $(GNUPLOT) $(notdir $(<))
 
-plots/%.pdf: plots/%.gpl plots/%.tsv
+plots/%.pdf: plots/%.gp plots/%.tsv
 	cd $(dir $(<)) && $(GNUPLOT) $(notdir $(<))
 
-plots/%.pdf: plots/%.gpl plots/%.dat
+plots/%.pdf: plots/%.gp plots/%.dat
 	cd $(dir $(<)) && $(GNUPLOT) $(notdir $(<))
 
-%.pdf: %.tex $(TEX_SRC_ALL) $(BIB_SRC) $(TEX_FIG) $(GPL_pdf) $(TEX_SUP)
+plots/%.pdf: plots/%.gp
+	cd $(dir $(<)) && $(GNUPLOT) $(notdir $(<))
+
+%.pdf: %.tex $(TEX_SRC_ALL) $(BIB_SRC) $(TEX_FIG) $(GP_pdf) $(TEX_SUP)
 	$(LATEX) $(patsubst %.tex,%,$<)
 	$(MAKE) $(TEX_BBL)
 	$(LATEX) $(patsubst %.tex,%,$<)
@@ -116,14 +119,14 @@ endif
 
 
 ### Rules ###################################################
-DST			?= $(MD_pdf) $(TEX_pdf) $(GPL_pdf)	# EDIT: destination files
+DST			?= $(MD_pdf) $(TEX_pdf) $(GP_pdf)	# EDIT: destination files
 
 .PHONY: all plots zip zip-cr clean distclean
 
-all: $(DST)
+all:: $(DST)
 	@echo Done
 
-plots: $(GPL_pdf)
+plots: $(GP_pdf)
 
 zip: $(DST)
 	$(ZIP) $(ZIPTARGET) $(ZIPEXCLUDE) -9 $^
