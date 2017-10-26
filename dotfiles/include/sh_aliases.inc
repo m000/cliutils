@@ -34,8 +34,6 @@ alias make=gmake
 
 {{ "Host-specific aliases for %s" | format(hostid) | hr }}
 {% if hostid == "The-Shrine-osx" -%}
-alias pinplay-start="VBoxManage startvm 'Pin Play' --type headless"
-alias pinplay-stop="VBoxManage controlvm 'Pin Play' acpipowerbutton"
 alias tagit="open -a 'The Tagger'"
 alias xpra="/Applications/Xpra.app/Contents/MacOS/Xpra"
 {%- else -%}
