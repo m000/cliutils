@@ -5,29 +5,40 @@ AUDIOHASH=md5sum
 audiohash() {
     local r=0
     local ah
-
     for input; do
-	ah=$(ffmpeg -loglevel 8 -i "$input" -map_metadata -1 -f wav - | "$AUDIOHASH" | awk '{print $1}')
-	if [ "$?" = "0" ]; then
-	    printf "%s\t%s\n" "$ah" "$input"
-	else
-	    ((r+=1))
-	fi
+		ah=$(ffmpeg -loglevel 8 -i "$input" -map_metadata -1 -f wav - | "$AUDIOHASH" | awk '{print $1}')
+		if [ "$?" = "0" ]; then
+			printf "%s\t%s\n" "$ah" "$input"
+		else
+			((r+=1))
+		fi
     done
     return "$r"
 }
 
 # compare the audio data in two files
 audiocmp() {
+	if [ "$#" -ne 2 ]; then
+		echo "invalid arguments"
+		return 98
+	fi
+	if ! [ -f "$1" ]; then
+		echo "not a file: $1"
+		return 1
+	fi
+	if ! [ -f "$2" ]; then
+		echo "not a file: $2"
+		return 2
+	fi
+
     local h1=$(audiohash "$1" | awk '{print $1}') || return 1
     local h2=$(audiohash "$2" | awk '{print $1}') || return 2
-
     if [ "$h1" = "$h2" ]; then
 		echo "match"
 		return 0
     else
 		echo "no match"
-		return 3
+		return 99
     fi
 }
 {% endif %}
