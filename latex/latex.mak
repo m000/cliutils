@@ -65,6 +65,7 @@ ZIP_CR_CP	= $(addprefix $(ZIPDIR)/,$(ZIP_CR_SRC))
 
 
 ### Settings ######################################################
+LATEX_SETTINGS			?= -synctex=1
 LATEX_FINAL_SETTINGS	?= -dPDFSETTINGS=/prepress
 LATEXPAND_SETTINGS		?= --verbose --explain
 ZIPEXCLUDE				?=							# EDIT: e.g. "-x v.pdf trip.pdf"
@@ -93,10 +94,10 @@ plots/%.pdf: plots/%.gp
 	cd $(dir $(<)) && $(GNUPLOT) $(notdir $(<))
 
 %.pdf: %.tex $(TEX_SRC_ALL) $(BIB_SRC) $(TEX_FIG) $(GP_pdf) $(TEX_SUP)
-	$(LATEX) $(patsubst %.tex,%,$<)
+	$(LATEX) $(LATEX_SETTINGS) $(patsubst %.tex,%,$<)
 	$(MAKE) $(TEX_BBL)
-	$(LATEX) $(patsubst %.tex,%,$<)
-	$(LATEX) $(LATEX_FINAL_SETTINGS) $(patsubst %.tex,%,$<)
+	$(LATEX) $(LATEX_SETTINGS) $(patsubst %.tex,%,$<)
+	$(LATEX) $(LATEX_SETTINGS) $(LATEX_FINAL_SETTINGS) $(patsubst %.tex,%,$<)
 
 %.bbl: %.aux
 	- $(BIBTEX) $(patsubst %.aux,%,$*)
