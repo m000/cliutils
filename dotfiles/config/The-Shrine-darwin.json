@@ -5,6 +5,7 @@
          "type": "osx"
     },
     "path": {
+        "music": "/Volumes/LaCie/music/nas",
         "homebrew": "/opt/homebrew",
         "cliutils": "$HOME/git/cliutils",
         "pin": "$HOME/software/pin",
