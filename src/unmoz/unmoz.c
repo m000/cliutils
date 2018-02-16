@@ -10,12 +10,9 @@
 #define __MSVCRT_VERSION__ 0x0601
 #endif
 
-long long int bytesin  = 0;
-long long int bytesout = 0;
-FILE *my_in, *my_out;
-char *bufin, *bufout;
+#define MOZLZ4_MAGIC "mozLz40"
 
-long long int fsize(const char *filename)
+uint64_t fsize(const char *filename)
 {
 #if __MINGW32__
 	struct __stat64 st;
@@ -29,112 +26,94 @@ long long int fsize(const char *filename)
 
 int main (int argc, char *argv[])
 {
-	FILE *in, *out;
-	int i, ibytes, igotbytes, outbytes, donebytes, putbytes;
+	FILE *in;
+	uint8_t *input;
+	uint32_t isize = 0;
+	uint32_t ipos = 0;
+
+	FILE *out;
+	uint32_t osize = 0;
+	uint8_t *output;
+
+	int32_t decompressed;
+	uint32_t n;
 
 	if (argc != 3) {
-		fprintf(stderr, "\n Mozilla LZ4 4a version decompressor\n"
-		        "\n Usage : unmoz inputfile outputfile"
-		        "\n %d\n", argc);
-		return 0;
+		fprintf(stderr,	"Mozilla LZ4 4a version decompressor.\n"
+						"Usage: unmoz inputfile outputfile\n"
+		);
+		return 1;
 	}
 
 	in = fopen(argv[1], "rb");
-	if (!in) {
-		perror("\n Error opening input file");
-		return 0;
+	if (!in) { perror("Error opening input file"); return 1; }
+
+	isize = fsize(argv[1]);
+	if (isize < 12 || isize > 134217728) {
+		fprintf(stderr, "Size is %" PRIu32 " bytes, must be >12 bytes and <128MB\n", isize);
+		return 1;
 	}
 
-	bytesin = fsize(argv[1]);
-	if (bytesin < 12 || bytesin > 134217728) {
-		fprintf(stderr, "\n Size is %" PRId64 ", must be >12 bytes and <128MB\n", bytesin);
-		perror("\n Input file size problem");
-		return 0;
+	input = malloc(isize * sizeof(uint8_t));
+	if (input == NULL) { perror("Cannot allocate memory"); return 1; }
+	memset(input, 0, isize*sizeof(uint8_t));
+
+	n = fread(input, sizeof(uint8_t), isize, in);
+	if (n != isize) {
+		fprintf(stderr, "Only got %" PRIu32 " input bytes. Quitting.\n", n);
+		perror("Read error");
+		return 1;
 	}
-	ibytes = bytesin;
 
-	my_in = in;
+	/* check magic number */
+	if (strncmp((char *)(input+ipos), MOZLZ4_MAGIC, strlen(MOZLZ4_MAGIC)+1) != 0) {
+		fprintf(stderr,	"Magic number mismatch.\n"
+						"Expected:\n\t"
+		);
+		for (int i=0; i<strlen(MOZLZ4_MAGIC)+1; i++) { fprintf(stderr, "%4c", MOZLZ4_MAGIC[i]); }
+		fprintf(stderr, "\n\t");
+		for (int i=0; i<strlen(MOZLZ4_MAGIC)+1; i++) { fprintf(stderr, "%4u", MOZLZ4_MAGIC[i]); }
+		fprintf(stderr, "\nGot:\n\t");
+		for (int i=0; i<strlen(MOZLZ4_MAGIC)+1; i++) { fprintf(stderr, "%4c", input[i+ipos]); }
+		fprintf(stderr, "\n\t");
+		for (int i=0; i<strlen(MOZLZ4_MAGIC)+1; i++) { fprintf(stderr, "%4u", input[i+ipos]); }
+		fprintf(stderr, "\n");
+		return 1;
+	}
+	printf("Magic number ok!\n");
+	ipos += strlen(MOZLZ4_MAGIC)+1;
 
+	/* read output size - big endian */
+	osize = input[ipos] + (input[ipos + 1] << 8) + (input[ipos + 2] << 16) + (input[ipos + 3] << 24);
+	printf("Output size: %" PRIu32 "\n", osize);
+	ipos += sizeof(uint32_t);
+
+	output = malloc(osize * sizeof(uint8_t));
+	if (input == NULL) { perror("Cannot allocate memory"); return 1; }
+	memset(output, 0, osize*sizeof(uint8_t));
+
+	/* decompress */
+	decompressed = LZ4_decompress_fast((char *)(input+ipos), (char *)output, osize);
+	if (decompressed < 0) {
+		perror("Decompression problem");
+		return 1;
+	}
+	printf("Decompressed %" PRIu32 "/%" PRIu32 " input bytes.\n", decompressed, isize-ipos);
+
+	/* write */
 	out = fopen(argv[2], "wb");
-	if (!out) {
-		perror("\n Error opening output file");
-		return 0;
+	if (!out) { perror("Error opening output file"); return 1; }
+	n = fwrite(output, sizeof(uint8_t), osize, out);
+	if (n != osize) {
+		fprintf(stderr, "Wrote %" PRIu32 "/%" PRIu32 " output bytes.\n", n, osize);
+		perror("Cannot write output file");
+		return 1;
 	}
 
-	my_out = out;
-
-	/* main code here */
-
-	bufin = malloc(ibytes);
-	if (bufin == NULL) {
-		perror("\n Cannot malloc ibytes");
-		return 0;
-	}
-	memset(bufin,0,ibytes);
-
-	igotbytes = fread(bufin, 1, ibytes, in);
-
-	if (igotbytes != ibytes) {
-		fprintf(stderr, "\n Only got %d\n input bytes. Quitting.\n", igotbytes);
-		perror("\n Short input file. Stop.\n");
-		return 0;
-	}
-
-	for (i=0; i<8; i++) {             /* mozLz40\0 */
-		printf("%c\n", bufin[i]);      /* 109, 111, 122, 76, 122, 52, 48, 0 */
-	}
-
-	if ( bufin[0] != 109 ||
-	     bufin[1] != 111 ||
-	     bufin[2] != 122 ||
-	     bufin[3] != 76  ||
-	     bufin[4] != 122 ||
-	     bufin[5] != 52  ||
-	     bufin[6] != 48  ||
-	     bufin[7] != 0 ) {
-
-		perror("\n Version magic does not match mozLz40\n");
-		return 0;
-	}
-
-	bufin += 8; /* move past magic header, next do size */
-
-	for (i=0; i<4; i++) {             /* size */
-		printf("%d\n", bufin[i]);      /* backwards */
-	}
-
-	outbytes = bufin[0] + ( bufin[1] << 8) + ( bufin[2] << 16) + (bufin[3] << 24);
-
-	bufin += 4; /* Move past 32 bit size field */
-
-	ibytes -= 12; /* correct the remaining buffer size, before decompress */
-
-	printf("\nOutbytes = %d\n", outbytes);
-
-	bufout = malloc(outbytes);
-	if (bufout == NULL) {
-		perror("\n Cannot malloc outbytes\n");
-		return 0;
-	}
-	memset(bufout,0,outbytes);
-
-	if ((donebytes = LZ4_decompress_fast (bufin, bufout, outbytes)) != ibytes) {
-		fprintf(stderr, "\n LZ4_decompress_fast returns %d\n Quitting.\n", donebytes);
-		perror("\n Decompression problem\n");
-		return 0;
-	}
-
-	putbytes = fwrite(bufout, 1, outbytes, out);
-
-	if (putbytes != outbytes) {
-		fprintf(stderr, "\n outbytes %d putbytes %d\n Quitting.\n", outbytes, putbytes);
-		perror("\n Decompress done but cannot write correctly\n");
-		return 0;
-	}
-
-	printf("\nReached the end\n");
-
-	if (in ) fclose(in);
-	if (out) fclose(out);
+	fclose(in);
+	fclose(out);
+	printf("Done.\n");
 	return 0;
 }
+
+/* vim: set tabstop=4 softtabstop=4 noexpandtab: */
