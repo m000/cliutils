@@ -1,15 +1,10 @@
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "lz4.h"
-
-/*
-   gcc -c lz4.c
-   gcc -c unmoz.c
-   gcc -o unmoz.exe lz4.o unmoz.o
-*/
 
 #if __MINGW32__
 #define __MSVCRT_VERSION__ 0x0601
@@ -18,12 +13,10 @@
 long long int bytesin  = 0;
 long long int bytesout = 0;
 FILE *my_in, *my_out;
-unsigned char * bufin;
-char * bufout;
+char *bufin, *bufout;
 
 long long int fsize(const char *filename)
 {
-
 #if __MINGW32__
 	struct __stat64 st;
 	if (_stat64(filename, &st) == 0) return st.st_size;
@@ -31,8 +24,7 @@ long long int fsize(const char *filename)
 	struct stat st;
 	if (stat(filename, &st) == 0) return st.st_size;
 #endif
-
-	return -1;
+	return 0;
 }
 
 int main (int argc, char *argv[])
@@ -55,7 +47,7 @@ int main (int argc, char *argv[])
 
 	bytesin = fsize(argv[1]);
 	if (bytesin < 12 || bytesin > 134217728) {
-		fprintf(stderr, "\n Size is %I64d, must be >12 bytes and <128MB\n", bytesin);
+		fprintf(stderr, "\n Size is %" PRId64 ", must be >12 bytes and <128MB\n", bytesin);
 		perror("\n Input file size problem");
 		return 0;
 	}

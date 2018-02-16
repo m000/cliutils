@@ -1,5 +1,5 @@
 RM=rm -f
-CFLAGS=-std=c99
+CFLAGS=-std=c99 -Wall -pedantic -O3
 
 TARGET=unmoz
 SRC=$(wildcard *.c)
