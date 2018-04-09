@@ -1,0 +1,14 @@
+{
+    "hostid": "debian32-linux",
+    "hostname": "debian32",
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
+    "os": {
+         "type": "linux",
+         "flavor": "debian"
+    },
+    "path": {
+        "pin": "$HOME/software/pin",
+        "cliutils": "$HOME/git/cliutils",
+        "ohmyzsh": "$HOME/.oh-my-zsh"
+    }
+}
