@@ -1,6 +1,7 @@
-Jinja2==2.9.6
+pkg-resources==0.0.0
+Jinja2==2.10
+PyYAML==3.12
 MarkupSafe==1.0
-PyYAML==3.11
-exdoc==0.0.5-0
--e git+git@github.com:m000/j2cli.git#egg=j2cli
 shutilwhich==1.1.0
+exdoc==0.0.5.post0
+-e git+git@github.com:m000/j2cli.git#egg=j2cli
