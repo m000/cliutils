@@ -21,6 +21,8 @@ alias slt="open -a 'Sublime Text'"
 alias sort=gsort
 alias top='top -o cpu'
 alias ldd='otool -L'
+alias make=gmake
+alias m='make -j $(sysctl -n hw.ncpu)'
 {%- elif os.type == "linux" %}
 {%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
@@ -28,6 +30,7 @@ alias open="xdg-open"
 {% if 'subl' is installed -%}
 alias slt="subl"
 {%- endif -%}
+alias m='make -j $(nproc)'
 {%- elif os.type == "bsd" %}
 alias make=gmake
 {%- endif %}

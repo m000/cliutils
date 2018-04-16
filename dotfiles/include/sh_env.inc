@@ -69,7 +69,7 @@ if [ -f /opt/homebrew/bin/virtualenvwrapper.sh ]; then
 fi
 #}
 
-### os specific settings
+{{ "OS-specific environment settings for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
 {#- curl-ca-bundle has been deprecated #}
 {% if (path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt') is file %}
@@ -77,11 +77,13 @@ export SSL_CERT_FILE={{(path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt'
 {% endif %}
 {% endif %}
 
-### host specific settings
-{% if hostname == 'debian64' -%}
+{{ "Host-specific environment settings for %s" | format(hostid) | hr }}
+{% if hostname in ['debian64', 'skygrid', 'wasteland'] -%}
 ulimit -c unlimited
 {% endif %}
-
+{% if hostname in ['skygrid', 'wasteland'] -%}
+export EXTRA_PLUGINS_PATH="$HOME"/spammer/panda-plugins
+{% endif %}
 
 {#-
 # vim:ft=sh
