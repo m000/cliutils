@@ -1,4 +1,4 @@
-.*_pyenv
-*_pyenv
-output
+output/
+*pyenv/
+.*pyenv/
 .*.sw?
