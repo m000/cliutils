@@ -56,6 +56,10 @@ export EDITOR=vim
 export SVN_EDITOR=vim
 {%- endif %}
 
+if [ "$LLVM_ROOT" != "" ]; then
+    export LD_LIBRARY_PATH="$LLVM_ROOT"/lib:"$LD_LIBRARY_PATH"
+fi
+
 {#
 #export RSTUDIO_WHICH_R=/opt/homebrew/bin/R
 #export JAVA_HOME="/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home"
