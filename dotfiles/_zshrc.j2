@@ -80,6 +80,10 @@ source $ZSH/oh-my-zsh.sh
 autoload -U zmv
 autoload -U zcp
 
+# command line word movement with ctrl+shift+left, ctrl+shift+right
+bindkey '[1;6D' backward-word 
+bindkey '[1;6C' forward-word
+
 {% include 'include/sh_env.inc' %}
 {% include 'include/sh_locale.inc' %}
 {% include 'include/sh_aliases.inc' %}
