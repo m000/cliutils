@@ -1,74 +1,66 @@
-#!/bin/bash
-# Script for preparing VM disks for shrinking/compacting.
-# After running the script, poweroff and use VBoxManage to compact the image:
-#   VBoxManage modifyhd --compact foo.vdi
-#
-# Short url: http://bit.ly/vmshrink-prep
+#!/usr/bin/env zsh
 
 SCRIPT="$(basename "$0")"
-DDBLOCK=8192
-let processed=0
 
-if [ "$#" -eq 0 ]; then
+function var_cleanup() {
+    find /var/log -type f -name '*.gz' -delete
+    find /var/log -type f -name '*.1' -delete
+    find /var/log -type f -exec cp /dev/null \{\} \;
+    find /var -type f -name '*-old' -delete
+}
+
+function swap_wipe() {
+    local processed_swap=0
+    swapon --show=NAME,UUID | tail -n +2 | while read dev uuid; do
+        echo "Clearing swap on $dev..."
+        swapoff -U $uuid
+        dd if=/dev/zero of="$dev" bs=8192
+        mkswap -L "swap$processed_swap" -U $uuid $dev
+	swapon -U $uuid
+        let processed_swap++
+    done
+}
+
+zparseopts -D -E -a opts -- help swap var
+
+if ((${opts[(I)-help]})); then
     echo "Script for preparing VM disks for shrinking/compacting."
-    echo "Usage: $SCRIPT dir1 dir2 ..."
+    echo "Usage: $SCRIPT [-help] [-var] [-swap] dir1 dir2 ..."
     exit 1
 fi
 
-function wipe_swap() {
-    if [ "$EUID" -ne 0 ]; then
-        echo "skipping swap (not root)"
-        return
-    fi
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "Unsupported OS: $(uname -s)."
+    exit 1
+fi
 
-    local swp
-    local swp_uuid
-    # use process substitution rather than a pipe to feed while
-    # avoids running in subshell so we can modify processed
-    while read swp; do
-        swp_uuid=$(blkid -o export "$swp" | grep ^UUID= | cut -d= -f2)
-        printf "wiping swap (%s, uuid=%s)\n\t" "$swp" "$swp_uuid"
-        printf "off "
-        swapoff -U "$swp_uuid"
-        printf "wipe "
-        dd if=/dev/zero of="$swp" bs=$DDBLOCK 2>/dev/null
-        printf "make "
-        mkswap -U "$swp_uuid" "$swp" >/dev/null
-        printf "on "
-        swapon -U "$swp_uuid"
-        printf "\n"
-        let processed++
-    done < <(tail -n +2 < /proc/swaps | awk '{print $1}')
-}
+if ((${opts[(I)-var]})); then
+    var_cleanup
+    echo var
+fi
 
-function wipe_empty() {
-    local wipefile="$1"/wipe"$RANDOM"
+if ((${opts[(I)-var]})); then
+    swap_wipe
+    echo swap
+fi
 
-    printf "wiping empty ($d)\n\t" "$1"
-    printf "make "
-    touch "$wipefile"
-    printf "wipe "
-    dd if=/dev/zero of="$wipefile" bs=$DDBLOCK 2>/dev/null
-    printf "rm "
-    rm -f "$wipefile"
-    printf "\n"
-    let processed++
-}
-
+processed=0
 for d in "$@"; do
-    if [ "$d" = "swap" ]; then
-        wipe_swap
-    elif [ -d "$d" ]; then
-        wipe_empty "$d"
-    else
+    if [ ! -d "$d" ]; then
         echo "skipping $d (not a dir)"
+        continue
     fi
+    echo "processing $d"
+    wipefile="$d"/wipe"$RANDOM"
+    dd if=/dev/zero of="$wipefile" bs=8192
+    rm -rf "$wipefile"
+    (( processed++ ))
 done
 
-if [ "$processed" -gt 0 ]; then
+if (( processed > 0 )); then
     echo ""
-    echo "Processed $processed locations"
+    echo "Processed $processed directories."
 else
-    echo "No actions performed."
+    echo "No filesystems processed."
 fi
 
