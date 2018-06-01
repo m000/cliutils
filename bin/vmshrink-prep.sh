@@ -3,10 +3,11 @@
 SCRIPT="$(basename "$0")"
 
 function var_cleanup() {
-    find /var/log -type f -name '*.gz' -delete
-    find /var/log -type f -name '*.1' -delete
-    find /var/log -type f -exec cp /dev/null \{\} \;
-    find /var -type f -name '*-old' -delete
+    echo "Cleaning up var files..."
+    find /var/log -type f -name '*.gz' -print -delete
+    find /var/log -type f -name '*.1' -print -delete
+    find /var/log -type f -print -exec cp /dev/null \{\} \;
+    find /var -type f -name '*-old' -print -delete
 }
 
 function swap_wipe() {
@@ -36,12 +37,10 @@ fi
 
 if ((${opts[(I)-var]})); then
     var_cleanup
-    echo var
 fi
 
 if ((${opts[(I)-var]})); then
     swap_wipe
-    echo swap
 fi
 
 processed=0
