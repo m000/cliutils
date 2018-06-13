@@ -48,11 +48,11 @@ TEX_SRC_CR	= $(patsubst %.tex,%-cr.tex,$(TEX_SRC)) # CR files
 endif
 TEX_SRC_ALL	?= $(wildcard *.tex)
 BIB_SRC		?= $(wildcard *.bib)
-TEX_AUX		= $(patsubst %.tex,%.aux,$(TEX_SRC))
-TEX_BBL		= $(patsubst %.aux,%.bbl,$(TEX_AUX))
+TEX_AUX		= $(patsubst %.pdf,%.aux,$(@))
+TEX_BBL		= $(patsubst %.pdf,%.bbl,$(@))
 TEX_SUP		?= $(wildcard *.cls *.bst *.sty)
 TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png figures/*.pdf figures/*.eps figures/*.png)
-TEX_CLEAN	?= $(wildcard *.log *.aux *.blg *.bbl *.out *.nav *.snm *.toc *.vrb)
+TEX_CLEAN	?= $(wildcard *.log *.aux *.blg *.bbl *.out *.nav *.snm *.toc *.vrb *.synctex.gz)
 TEX_pdf		= $(patsubst %.tex,%.pdf,$(TEX_SRC))
 
 # Zip:
@@ -100,7 +100,7 @@ plots/%.pdf: plots/%.gp
 	$(LATEX) $(LATEX_SETTINGS) $(LATEX_FINAL_SETTINGS) $(patsubst %.tex,%,$<)
 
 %.bbl: %.aux
-	- $(BIBTEX) $(patsubst %.aux,%,$*)
+	-$(BIBTEX) $(patsubst %.aux,%,$*)
 
 $(ZIPDIR)/%-cr.tex: %.tex
 ifneq ($(TEX_SRC_CR),)
