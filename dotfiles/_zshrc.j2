@@ -36,6 +36,12 @@ ZSH_THEME="gnzh"
 # DISABLE_UNTRACKED_FILES_DIRTY="true"
 -#}
 
+{% if os.type == "osx" %}
+# Uncomment following line to disable permission checking for completion directories.
+# Useful if shell utilities are installed as user rather than root (e.g. OSX homebrew).
+ZSH_DISABLE_COMPFIX="true"
+{% endif %}
+
 # Plugins to load. Plugin locations: ~/.oh-my-zsh/plugins/, ~/.oh-my-zsh/custom/plugins/
 {% with plugins,lsep=([], "\n   ") %}
     {% do plugins.append(lsep) %}
@@ -44,7 +50,7 @@ ZSH_THEME="gnzh"
     {% do plugins.extend(["git", "svn", "python", "pip", "sudo", "gnu-utils", lsep,]) %}
     {% do plugins.extend(["ssh-agent", lsep,]) %}
     {% do plugins.extend(["history", "dirhistory", "last-working-dir", "jump", lsep,]) %}
-    {% do plugins.extend(["catimg", "encode64", "urltools", "nyan", "web-search", lsep,]) %}
+    {% do plugins.extend(["catimg", "encode64", "urltools", "web-search", lsep,]) %}
 
     {#- clipcopy/clippaste wrappers #}
     {% if "pbcopy" is installed or "xclip" is installed %}
