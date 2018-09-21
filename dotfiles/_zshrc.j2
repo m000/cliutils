@@ -112,6 +112,7 @@ fpath=(/opt/homebrew/share/zsh-completions $fpath)
 {% endif %}
 
 {% if "$HOME/.iterm2_shell_integration.zsh" is file %}
+# enable iterm2 integration when ssh-ing to this host
 source "$HOME/.iterm2_shell_integration.zsh"
 {% endif %}
 
