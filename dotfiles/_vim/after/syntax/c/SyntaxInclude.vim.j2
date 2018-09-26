@@ -11,5 +11,8 @@ syn keyword cppType ADDRINT BOOL VOID
 syn keyword cppBoolean TRUE FALSE
 {% endif %}
 
+" Custom types ****************************************************************
+syn match cType "[a-z][a-z][a-z_]*[a-z]_t"
+
 " vim:ft=vim
 
