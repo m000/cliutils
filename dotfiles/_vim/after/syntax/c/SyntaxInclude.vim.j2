@@ -12,7 +12,7 @@ syn keyword cppBoolean TRUE FALSE
 {% endif %}
 
 " Custom types ****************************************************************
-syn match cType "[a-z][a-z][a-z_]*[a-z]_t"
+syn match cType "[a-z][a-z][a-z_]*[a-z]_t\([^a-z_]\)\@="
 
 " vim:ft=vim
 
