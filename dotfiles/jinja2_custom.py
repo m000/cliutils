@@ -23,6 +23,14 @@ def hr(text=None, width=80, fill='#'):
     else:
         return ''.ljust(width, fill)
 
+def bool(var=None, true_=None, false_=None):
+    ''' Evaluates var to true or false.
+    '''
+    if var:
+        return ('%s' % (true_ if true_ is not None else str(True).lower()))
+    else:
+        return ('%s' % (false_ if false_ is not None else str(False).lower()))
+
 
 ### Tests ###########################################################
 def is_dir(d):
@@ -56,6 +64,7 @@ def is_installed(b):
 ### Dictionaries for auto-loading by j2cli ##########################
 FILTERS = {
     'hr':               hr,
+    'bool':             bool,
     'py_type':          type,
     'sh_quote':         pipes.quote,
     'sh_which':         which,
