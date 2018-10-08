@@ -6,6 +6,7 @@
          "type": "linux",
          "flavor": "ubuntu"
     },
+    "shell": {},
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",

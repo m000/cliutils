@@ -6,6 +6,10 @@
          "type": "linux",
          "flavor": "ubuntu"
     },
+    "shell": {
+        "iterm_tmux_integration": true,
+        "use_default_llvm": true
+    },
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",

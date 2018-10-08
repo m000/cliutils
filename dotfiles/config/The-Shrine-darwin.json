@@ -4,6 +4,7 @@
     "os": {
          "type": "osx"
     },
+    "shell": {},
     "path": {
         "music": "/Volumes/LaCie/music/nas",
         "homebrew": "/opt/homebrew",

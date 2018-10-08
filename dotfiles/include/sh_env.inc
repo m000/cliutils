@@ -17,7 +17,7 @@
     {%- endif -%}
 
     {#- LLVM -#}
-    {%- if path.llvm is dir -%}
+    {%- if path.llvm is dir and not shell.use_default_llvm -%}
         {%- do exports.append(('LLVM_ROOT', '"{0}"'.format(path.llvm))) -%}
         {%- do path_env.insert(0, '"$LLVM_ROOT/bin"') -%}
     {%- endif -%}
@@ -56,9 +56,11 @@ export EDITOR=vim
 export SVN_EDITOR=vim
 {%- endif %}
 
+{% if not shell.use_default_llvm %}
 if [ "$LLVM_ROOT" != "" ]; then
     export LD_LIBRARY_PATH="$LLVM_ROOT"/lib:"$LD_LIBRARY_PATH"
 fi
+{% endif %}
 
 {#
 #export RSTUDIO_WHICH_R=/opt/homebrew/bin/R

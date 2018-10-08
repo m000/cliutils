@@ -111,7 +111,10 @@ export DISABLE_UNTRACKED_FILES_DIRTY=true
 fpath=(/opt/homebrew/share/zsh-completions $fpath)
 {% endif %}
 
-{% if "$HOME/.iterm2_shell_integration.zsh" is file %}
+{%- if "$HOME/.iterm2_shell_integration.zsh" is file %}
+# enable iterm2 integration for tmux sessions
+ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX={{ shell.iterm_tmux_integration | bool }}
+
 # enable iterm2 integration when ssh-ing to this host
 source "$HOME/.iterm2_shell_integration.zsh"
 {% endif %}
