@@ -3,10 +3,12 @@
     "hostname": "bui",
     "browsers": [],
     "os": {
-         "type": "linux",
-         "flavor": "ubuntu"
+        "type": "linux",
+        "flavor": "ubuntu"
     },
-    "shell": {},
+    "shell": {
+        "ohmyzsh_theme": "gnzh"
+    },
     "path": {
         "cliutils": "$HOME/git/cliutils",
         "ohmyzsh": "$HOME/.oh-my-zsh"

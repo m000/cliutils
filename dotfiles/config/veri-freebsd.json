@@ -3,10 +3,12 @@
     "hostname": "veri",
     "browsers": [],
     "os": {
-         "type": "bsd",
-         "flavor": "freebsd"
+        "type": "bsd",
+        "flavor": "freebsd"
     },
-    "shell": {},
+    "shell": {
+        "ohmyzsh_theme": "gnzh"
+    },
     "path": {
         "cliutils": "$HOME/git/cliutils",
         "ohmyzsh": "$HOME/.oh-my-zsh"

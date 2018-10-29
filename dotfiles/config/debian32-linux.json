@@ -3,10 +3,12 @@
     "hostname": "debian32",
     "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
     "os": {
-         "type": "linux",
-         "flavor": "debian"
+        "type": "linux",
+        "flavor": "debian"
     },
-    "shell": {},
+    "shell": {
+        "ohmyzsh_theme": "mh"
+    },
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",

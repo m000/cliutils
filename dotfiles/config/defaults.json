@@ -2,7 +2,7 @@
     "hostid": "The-Shrine-osx",
     "hostname": "The-Shrine",
     "os": {
-         "type": "osx"
+        "type": "osx"
     },
     "shell": {
         "ohmyzsh_theme": "gnzh"

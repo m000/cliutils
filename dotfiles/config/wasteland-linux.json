@@ -3,10 +3,11 @@
     "hostname": "wasteland",
     "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
     "os": {
-         "type": "linux",
-         "flavor": "ubuntu"
+        "type": "linux",
+        "flavor": "ubuntu"
     },
     "shell": {
+        "ohmyzsh_theme": "gnzh",
         "iterm_tmux_integration": true,
         "use_default_llvm": true
     },
