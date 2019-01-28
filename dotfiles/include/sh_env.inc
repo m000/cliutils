@@ -28,6 +28,11 @@
         {%- do path_env.insert(0, '"$HOMEBREW_PATH"') -%}
     {%- endif -%}
 
+    {#- Java -#}
+    {%- if path.java is dir -%}
+        {%- do exports.append(('JAVA_HOME', '"{0}"'.format(path.java))) -%}
+    {%- endif -%}
+
     {#- Haskell package manager -#}
     {%- if "$HOME/.cabal/bin" is dir -%}
         {%- do path_env.insert(0, '"$HOME"/.cabal/bin') -%}
