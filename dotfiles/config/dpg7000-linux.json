@@ -1,10 +1,10 @@
 {
-    "hostid": "dastardly-linux",
-    "hostname": "dastardly",
+    "hostid": "dpg7000-linux",
+    "hostname": "dpg7000",
     "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
     "os": {
         "type": "linux",
-        "flavor": "debian"
+        "flavor": "ubuntu"
     },
     "shell": {
         "ohmyzsh_theme": "gnzh"
