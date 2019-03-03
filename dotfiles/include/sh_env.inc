@@ -82,10 +82,6 @@ fi
 
 {{ "OS-specific environment settings for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
-{#- curl-ca-bundle has been deprecated #}
-{% if (path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt') is file %}
-export SSL_CERT_FILE={{(path.homebrew + 'opt/curl-ca-bundle/share/ca-bundle.crt')}}
-{% endif %}
 {% endif %}
 
 {{ "Host-specific environment settings for %s" | format(hostid) | hr }}
