@@ -28,6 +28,20 @@
         {%- do path_env.insert(0, '"$HOMEBREW_PATH"') -%}
     {%- endif -%}
 
+    {#- Homebrew gnubin -#}
+    {%- if path.homebrew is dir and path.homebrew_gnubin -%}
+        {%- set gnubin=[] -%}
+        {%- for p in path.homebrew_gnubin -%}
+            {%- if (path.homebrew + '/opt/' + p + '/libexec/gnubin') is dir -%}
+                {%- do gnubin.insert(0, path.homebrew + '/opt/' + p + '/libexec/gnubin') -%}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- endif -%}
+    {%- if gnubin -%}
+        {%- do exports.append(('HOMEBREW_GNUBIN', gnubin|join(':'))) -%}
+        {%- do path_env.insert(0, '"$HOMEBREW_GNUBIN"') -%}
+    {%- endif -%}
+
     {#- Java -#}
     {%- if path.java is dir -%}
         {%- do exports.append(('JAVA_HOME', '"{0}"'.format(path.java))) -%}

@@ -16,13 +16,9 @@ alias vi=vim
 {{ "OS-specific aliases for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
 alias ldd='otool -L'
-alias ls='gls --color=tty'
-alias m='gmake -j $(sysctl -n hw.ncpu)'
-alias make=gmake
-alias sed=gsed
+alias ls='ls --color=tty'
+alias m='make -j $(sysctl -n hw.ncpu)'
 alias slt="open -a 'Sublime Text'"
-alias sort=gsort
-alias tar=gtar
 alias top='top -o cpu'
 {%- elif os.type == "linux" %}
 {%- if 'xdg-open' is installed -%}
