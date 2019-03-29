@@ -30,6 +30,23 @@ gmresize() {
 		gm identify "$f"
 	done
 }
+
+gmboomerang() {
+	local boomtemp=$(mktemp -t boomtmpXXX.gif)
+	local lastframe=$(gm identify "$1" | tail -1 | awk -F'[\\[\\]]' '{ print $2 }')
+	local forward_range="0-$lastframe"
+	local reverse_range="$(( $lastframe -1 ))-1"
+	local frame_delay=$(( ${3:-5} ))
+
+	gm convert "$1" -coalesce "$boomtemp"
+	gm convert -delay "$frame_delay" -loop 0 "$boomtemp"'['"$forward_range"']' "$boomtemp"'['"$reverse_range"']' "$2"
+	rm -f "$boomtemp"
+	{% if ["gifsicle",] is installed %}
+	echo gifsicle --batch -O3 "$2"
+	{% else %}
+	echo "Warning: gifsicle not found, output is not optimized." >&2
+	{% endif -%}
+}
 {% else %}
 # not available in this setup
 {% endif %}
