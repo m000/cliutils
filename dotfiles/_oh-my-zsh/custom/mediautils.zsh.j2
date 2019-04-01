@@ -1,0 +1,153 @@
+{% if ["gm",] is installed %}
+# git plugin alias conflicts with graphicsmagick
+unalias gm 2>/dev/null
+{% endif %}
+
+# quick batch image resize with graphicsmagick
+{% if ["gm",] is installed %}
+gmresize() {
+    local q=${q:-"85"}
+    local s=${s:-"1200"}
+    local sm=$(echo "$s" | tr -dc ^)
+    s=$(echo "$s" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+
+    for f in "$@"; do
+        # extract extension for file
+        fbnm=$(basename "$f")
+        fext="${fbnm##*.}"
+        if [ "$fext" = "$fbnm" ]; then
+            echo "Skipping '$f' (no extension)." 1>&2
+            continue
+        fi
+
+        # resize and save to temp file, then overwrite original
+        mv -f =(gm convert -resize ${s}x${s}${sm} -quality "$q" "$f" ${fext}:-) "$f"
+
+        # check for failure and overwrite original
+        if [ "$?" != "0" ]; then
+            echo "Conversion failure for '$f' (conversion failure)." 1>&2
+            continue
+        fi
+
+        gm identify "$f"
+    done
+}
+{% else %}
+# not available in this setup
+{% endif %}
+
+# boomerang gifs using graphicsmagic and gifsicle
+{% if ["gm",] is installed %}
+gmboomerang() {
+    local boomtemp=$(mktemp -t boomtmpXXX.gif)
+    local lastframe=$(gm identify "$1" | tail -1 | awk -F'[\\[\\]]' '{ print $2 }')
+    local forward_range="0-$lastframe"
+    local reverse_range="$(( $lastframe -1 ))-1"
+    local frame_delay=$(( ${3:-5} ))
+
+    gm convert "$1" -coalesce "$boomtemp"
+    gm convert -delay "$frame_delay" -loop 0 "$boomtemp"'['"$forward_range"']' "$boomtemp"'['"$reverse_range"']' "$2"
+    rm -f "$boomtemp"
+    {% if ["gifsicle",] is installed %}
+    gifsicle --batch -O3 "$2"
+    {% else %}
+    echo "Warning: gifsicle not found, output is not optimized." >&2
+    {% endif -%}
+}
+{% else %}
+# not available in this setup
+{% endif %}
+
+# easy time range arguments for ffmpeg
+{% if ["ffmpeg",] is installed %}
+fftimeparse() {
+    local mode=""
+    local spec=""
+    local specf=""
+
+    if [[ $1 =~ '.+\+.+' ]]; then
+        mode="delta"
+        spec=( ${(s:+:)1} )
+    elif [[ $1 =~ '.+\-.+' ]]; then
+        mode="range"
+        spec=( ${(s:-:)1} )
+    fi
+
+{% raw %}
+    if [ "$mode" = "" ] || (( ${#spec} != 2 )); then
+        echo "unsupported ffmpeg time spec" >&2
+        return 1
+    fi
+{% endraw %}
+
+    # cast to numeric
+    specf=( $(( ${spec[1]} )) $(( ${spec[2]} )) )
+
+    if [ "$mode" = "delta" ]; then
+        printf -- "-ss %.02f -t %.02f\n" ${specf[1]} ${specf[2]}
+        return 0
+    elif [ "$mode" = "range" ]; then
+        printf -- "-ss %.02f -t %.02f\n" ${specf[1]} $(( ${specf[2]} - ${specf[1]} ))
+        return 0
+    fi
+
+    return 1
+}
+{% else %}
+# not available in this setup
+{% endif %}
+
+# crop detection using ffmpeg
+{% if ["ffplay",] is installed %}
+ffcropdetect() {
+    local cropdetect=(-cropdetect 24:16:12)
+    local cropdetecttemp=$(mktemp -t cropdetecttmpXXX.txt)
+    local timespec=""
+    local opts=()
+
+    zparseopts -D -E -K -a opts t:=timespec cropdetect:=cropdetect
+    if [[ $# > 1 || -z "${timespec[(r)-t]}" ]]; then
+        cat <<- EOF
+			Usage: ffcropdetect [-cropdetect CROPDETECT] -t TIMESPEC FILE
+			
+			  CROPDETECT  Arguments for the ffmpeg cropdetect filter as a B:R:F triplet.
+			              B: black threshold, R: crop rounding, F: frames per output line
+			  TIMESPEC    Time specification, suitable for fftimeparse.
+			  FILE        File to process.
+			
+		EOF
+        return 1
+    fi
+
+    {# parameter strings need to be split with the (z) expansion flag #}
+    local fftimespec=$(fftimeparse $timespec[2])
+    local ffcropdetect="-vf cropdetect=$cropdetect[2]"
+    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2> "$cropdetecttemp"
+
+    {# choose the most popular crop flags #}
+    local cropflags=$(grep -o 'crop=.*$' "$cropdetecttemp" |
+        sort | uniq -c | sort -n | tail -1 | awk '{print $2}')
+
+    {# print and return #}
+    rm -f "$cropdetecttemp"
+    printf "%s\n" "$cropflags"
+    return 0
+}
+{% else %}
+# not available in this setup
+{% endif %}
+
+# animated gif creation using ffmpeg
+{% if ["ffmpeg",] is installed %}
+ffmakegif() {
+
+}
+{% else %}
+# not available in this setup
+{% endif %}
+
+#ffmpeg -y -ss 0 -t 5 -i input.mp4 -an -vf crop=... -vf fps=10,scale=320:-1:flags=lanczos,palettegen palette.png
+#ffmpeg -y -ss 0 -t 5 -i input.mp4 -i palette.png -filter_complex "crop=...,fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse" output.gif
+
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
+
