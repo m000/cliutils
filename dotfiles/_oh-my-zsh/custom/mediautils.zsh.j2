@@ -100,20 +100,23 @@ fftimeparse() {
 # crop detection using ffmpeg
 {% if ["ffplay",] is installed %}
 ffcropdetect() {
-    local cropdetect=(-cropdetect 24:16:12)
-    local cropdetecttemp=$(mktemp -t cropdetecttmpXXX.txt)
     local timespec=""
+    local cropdetect=(-cropdetect 24:16:12)
     local opts=()
+    local cropdetecttmp=$(mktemp -t cropdetecttmpXXX.txt)
 
     zparseopts -D -E -K -a opts t:=timespec cropdetect:=cropdetect
     if [[ $# > 1 || -z "${timespec[(r)-t]}" ]]; then
         cat <<- EOF
-			Usage: ffcropdetect [-cropdetect CROPDETECT] -t TIMESPEC FILE
+			Usage: ffcropdetect [-cropdetect CDARGS] -t TIMESPEC INPUT
 			
-			  CROPDETECT  Arguments for the ffmpeg cropdetect filter as a B:R:F triplet.
-			              B: black threshold, R: crop rounding, F: frames per output line
-			  TIMESPEC    Time specification, suitable for fftimeparse.
-			  FILE        File to process.
+			Mandatory arguments:
+			  TIMESPEC  Time specification, suitable for fftimeparse.
+			  INPUT     File to process.
+			
+			Optional arguments:
+			  CDARGS    Arguments for the ffmpeg cropdetect filter as a B:R:F triplet.
+			            B: black threshold, R: crop rounding, F: frames per output line
 			
 		EOF
         return 1
@@ -122,14 +125,14 @@ ffcropdetect() {
     {# parameter strings need to be split with the (z) expansion flag #}
     local fftimespec=$(fftimeparse $timespec[2])
     local ffcropdetect="-vf cropdetect=$cropdetect[2]"
-    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2> "$cropdetecttemp"
+    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2> "$cropdetecttmp"
 
     {# choose the most popular crop flags #}
-    local cropflags=$(grep -o 'crop=.*$' "$cropdetecttemp" |
+    local cropflags=$(grep -o 'crop=.*$' "$cropdetecttmp" |
         sort | uniq -c | sort -n | tail -1 | awk '{print $2}')
 
     {# print and return #}
-    rm -f "$cropdetecttemp"
+    rm -f "$cropdetecttmp"
     printf "%s\n" "$cropflags"
     return 0
 }
@@ -140,7 +143,42 @@ ffcropdetect() {
 # animated gif creation using ffmpeg
 {% if ["ffmpeg",] is installed %}
 ffmakegif() {
+    local timespec=""
+    local crop=""
+    local cropdetect=""
+    local fps=(-fps 10)
+    local delay=(-delay 5) #???
+    local scale=(-scale 320)
+    local opts=()
+    local gifpalettetmp=$(mktemp -t gifpalettetmpXXX.txt)
 
+    zparseopts -D -E -K -a opts t:=timespec fps:=fps scale:=scale crop=crop cropdetect:=cropdetect
+    echo "timespec: $timespec"
+    echo "fps: $fps"
+    echo "scale: $scale"
+    echo "crop: $crop"
+    echo "cropdetect: $cropdetect"
+
+    {# help text needs leading tab spaces - find or make a jinja2 filter to handle this #}
+    if [[ $# > 2 || -z "${timespec[(r)-t]}" ]]; then
+        cat <<- EOF
+			Usage: ffmakegif [...] -t TIMESPEC INPUT OUTPUT
+			
+			Mandatory arguments:
+			  TIMESPEC    Time specification, suitable for fftimeparse.
+			  INPUT       File to process.
+			  OUTPUT      File to write the gif output.
+			
+			Optional arguments:
+			  -fps FPS              Frames per second in the output gif.
+			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...)
+			  -crop                 Enable autocropping.
+			  -cropdetect CDARGS    Arguments for the ffmpeg cropdetect filter. See ffcropdetect.
+			                        Implies -crop.
+			
+		EOF
+        return 1
+    fi
 }
 {% else %}
 # not available in this setup
