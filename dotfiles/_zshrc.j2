@@ -106,7 +106,7 @@ source "$HOME"/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
 # git/svn prompt should not mark repository as dirty for untracked files
 export DISABLE_UNTRACKED_FILES_DIRTY=true
 
-{% if (path.homebrew + '/share/zsh-completions') is dir %}
+{% if path.homebrew and (path.homebrew + '/share/zsh-completions') is dir %}
 {{ "Additional completions" | hr }}
 fpath=({{path.homebrew + '/share/zsh-completions'}} $fpath)
 {% endif %}
