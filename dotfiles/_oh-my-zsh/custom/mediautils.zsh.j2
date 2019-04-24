@@ -105,6 +105,9 @@ ffcropdetect() {
     local opts=()
     local cropdetecttmp=$(mktemp -t cropdetecttmpXXX.txt)
 
+    # -D: remove parsed
+    # -E: don't stop when no match
+    # -K: keep default values when no match
     zparseopts -D -E -K -a opts t:=timespec cropdetect:=cropdetect
     if [[ $# > 1 || -z "${timespec[(r)-t]}" ]]; then
         cat <<- EOF
