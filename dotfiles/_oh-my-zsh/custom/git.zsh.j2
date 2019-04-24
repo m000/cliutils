@@ -1,0 +1,33 @@
+{% if ["git",] is installed %}
+# remove dangerous aliases of the git plugin
+unalias grh 2>/dev/null
+unalias grhh 2>/dev/null
+unalias gru 2>/dev/null
+
+# unalias stupid aliases of the git plugin
+unalias g 2>/dev/null
+unalias gp 2>/dev/null
+unalias ghh 2>/dev/null
+
+ghash() {
+    local repo
+    local rev
+    if (( $# == 0 )); then
+        repo="."
+        rev="HEAD"
+    elif (( $# == 1 )); then
+        repo="$1"
+        rev="HEAD"
+    else
+        repo="$1"
+        rev="$2"
+    fi
+
+    cd "$repo"
+    git rev-parse --short --verify "$rev"
+    cd ~-
+}
+
+{% endif %}
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
+
