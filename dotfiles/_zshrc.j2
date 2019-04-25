@@ -52,11 +52,6 @@ ZSH_DISABLE_COMPFIX="true"
     {% do plugins.extend(["history", "dirhistory", "last-working-dir", "jump", lsep,]) %}
     {% do plugins.extend(["catimg", "encode64", "urltools", "web-search", lsep,]) %}
 
-    {#- clipcopy/clippaste wrappers #}
-    {% if "pbcopy" is installed or "xclip" is installed %}
-        {% do plugins.append("clipboard") %}
-    {% endif %}
-
     {#- os-specific plugins #}
     {% if os.type == "osx" %}
         {% do plugins.extend(["osx", "brew", "terminalapp", "Forklift",]) %}
