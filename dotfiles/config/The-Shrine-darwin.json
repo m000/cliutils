@@ -10,7 +10,7 @@
     "path": {
         "music": "/Volumes/LaCie/music/nas",
         "homebrew": "/opt/homebrew",
-        "homebrew_gnubin": ["coreutils", "make", "gnu-tar", "gnu-sed"],
+        "homebrew_gnubin": ["coreutils", "make", "gnu-tar", "gnu-sed", "findutils"],
         "cliutils": "$HOME/git/cliutils",
         "pin": "$HOME/software/pin",
         "ohmyzsh": "$HOME/.oh-my-zsh"
