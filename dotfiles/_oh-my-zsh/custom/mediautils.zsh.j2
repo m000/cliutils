@@ -75,7 +75,15 @@ fftimeparse() {
 
 {% raw %}
     if [ "$mode" = "" ] || (( ${#spec} != 2 )); then
-        echo "unsupported ffmpeg time spec" >&2
+        cat >&2 <<- EOF
+			Usage: fftimeparse TIMESPEC
+			Convert a simplified TIMESPEC to arguments suitable for specifying
+			a time range to ffmpeg.
+			
+			Supports two TIMESPEC formats:
+			    delta TIMESPEC  <start>+<delta>
+			    range TIMESPEC  <start>-<end>
+		EOF
         return 1
     fi
 {% endraw %}
@@ -101,21 +109,29 @@ fftimeparse() {
 {% if ["ffplay",] is installed %}
 ffcropdetect() {
     local timespec=""
-    local cropdetect=(-cropdetect 24:16:12)
+    local cropdetect=(-cropdetect 24:2:12)
     local opts=()
     local cropdetecttmp=$(mktemp -t cropdetecttmpXXX.txt)
 
     # -D: remove parsed
     # -E: don't stop when no match
     # -K: keep default values when no match
-    zparseopts -D -E -K -a opts t:=timespec cropdetect:=cropdetect
+    zparseopts -D -E -K -a opts -test t:=timespec cropdetect:=cropdetect 
     if [[ $# > 1 || -z "${timespec[(r)-t]}" ]]; then
         cat <<- EOF
-			Usage: ffcropdetect [-cropdetect CDARGS] -t TIMESPEC INPUT
+			Usage: ffcropdetect [-cropdetect CDARGS] -t TIMESPEC [--test] INPUT
+			Auto-detect how INPUT should be cropped to remove surrounding empty space.
+			
+			An ffmpeg video filter argument that can be used to apply that crop will be
+			printed at the end of the detection. E.g. for a 640x480 video with 20px/40px
+			margins, crop=600:400:20:40 will be printed.
 			
 			Mandatory arguments:
 			  TIMESPEC  Time specification, suitable for fftimeparse.
 			  INPUT     File to process.
+			
+			Flags:
+			  --test    Make a test play using the detected crop before exit.
 			
 			Optional arguments:
 			  CDARGS    Arguments for the ffmpeg cropdetect filter as a B:R:F triplet.
@@ -125,18 +141,24 @@ ffcropdetect() {
         return 1
     fi
 
+    # parse timespec and use ffplay in cropdetect mode
     {# parameter strings need to be split with the (z) expansion flag #}
     local fftimespec=$(fftimeparse $timespec[2])
     local ffcropdetect="-vf cropdetect=$cropdetect[2]"
-    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2> "$cropdetecttmp"
+    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2>"$cropdetecttmp"
 
-    {# choose the most popular crop flags #}
+    # choose the most popular crop flags
     local cropflags=$(grep -o 'crop=.*$' "$cropdetecttmp" |
         sort | uniq -c | sort -n | tail -1 | awk '{print $2}')
 
-    {# print and return #}
+    # print/test and return
     rm -f "$cropdetecttmp"
     printf "%s\n" "$cropflags"
+    {# (Ie): exact match, (I): pattern match #}
+    if (($opts[(Ie)--test])); then
+        echo "Test play..." >&2
+        ffplay -autoexit -i "$1" -vf $cropflags 1>/dev/null 2>/dev/null
+    fi
     return 0
 }
 {% else %}
