@@ -82,7 +82,11 @@ gmboomerang() {
     local lastframe=$(gm identify "$1" | tail -1 | awk -F'[\\[\\]]' '{ print $2 }')
     local forward_range="0-$lastframe"
     local reverse_range="$(( $lastframe -1 ))-1"
-    local frame_delay=$(( ${3:-5} ))
+    {% if ["gifsicle",] is installed %}
+    local frame_delay=${3:-default}
+    {% else %}
+    local frame_delay=${3:-10}
+    {% endif %}
 
     if (( $# < 2 || $# > 3 )); then
         cat >&2 <<- EOF
@@ -97,6 +101,18 @@ gmboomerang() {
 		EOF
         return 1
     fi
+
+    {% if ["gifsicle",] is installed %}
+    # get frame delay from source
+    if [ $frame_delay = "default" ]; then
+        # get delay in sec
+        frame_delay=$(gifsicle -I "$1" | grep delay | grep -Eo '[.0-9]+' | 
+            sort | uniq -c | sort -n | head -1 | awk '{print $2}')
+
+        # convert to 1/100 of sec
+        frame_delay=$(printf "%d" $((100 * $frame_delay)))
+    fi
+    {% endif %}
 
     gm convert "$1" -coalesce "$boomtemp"
     gm convert -delay "$frame_delay" -loop 0 "$boomtemp"'['"$forward_range"']' "$boomtemp"'['"$reverse_range"']' "$2"
