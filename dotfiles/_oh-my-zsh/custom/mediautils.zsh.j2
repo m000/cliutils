@@ -1,3 +1,42 @@
+{#
+# ------------
+# zsh quickref
+# ------------
+#
+# **** Variable expansion ****
+# Variables containing spaces do not need to be quoted to avoid expansion
+# to multiple arguments. When you do need to expand a variable to multiple
+# arguments, use the '=' modifier. Do note however, that any other special
+# characters that may be included in the string, still require quoting!
+# Example:
+#     lsopts="-a -l"
+#     ls $lsopts        # error!!!
+#     ls ${=lsopts}     # runs 'ls -a -l'
+#
+# **** zparseopt flags ****
+# -D:    Remove parsed options.
+# -E:    Don't stop when no match.
+# -K:    Keep any default values when no match.
+# -a a:  Simple array with matched options. To test for a flag use the index
+#        lookup modifiers ('I' or 'Ie') modifiers, and arithmetic evaluation.
+#        Example:
+#           if (($a[(Ie)--flag])); then
+#               echo "flag specified"
+#           fi
+# -A A:  Associative array with matched options.
+#
+# **** zparseopt option specifiers ****
+# name       Simple a flag.
+# name+      Flag that allows multiple instances (e.g. to increase verbosity).
+# name:      Option with mandatory argument. Two elements added to array.
+# name:-     Option with mandatory argument. Added to array as one element.
+# name+:     Same as name:, only allow multiple instances of the option.
+# name+:-    Same as name:-, only allow multiple instances of the option.
+#
+# The options are added to the array specied with the -a flag.
+# You can specify another array for some options by appending a '=altarray'
+# at the end of the specifier.
+#}
 {% if ["gm",] is installed %}
 # git plugin alias conflicts with graphicsmagick
 unalias gm 2>/dev/null
@@ -33,7 +72,7 @@ gmresize() {
     done
 }
 {% else %}
-# not available in this setup
+# gmresize: not available in this setup
 {% endif %}
 
 # boomerang gifs using graphicsmagic and gifsicle
@@ -45,6 +84,20 @@ gmboomerang() {
     local reverse_range="$(( $lastframe -1 ))-1"
     local frame_delay=$(( ${3:-5} ))
 
+    if (( $# < 2 || $# > 3 )); then
+        cat >&2 <<- EOF
+			Usage: gmboomerang INPUT OUTPUT [DELAY]
+			
+			Mandatory arguments:
+			  INPUT       Input gif.
+			  OUTPUT      Output gif.
+			
+			Optional arguments:
+			  DELAY       Delay between gif frames in 1/100ths of sec.
+		EOF
+        return 1
+    fi
+
     gm convert "$1" -coalesce "$boomtemp"
     gm convert -delay "$frame_delay" -loop 0 "$boomtemp"'['"$forward_range"']' "$boomtemp"'['"$reverse_range"']' "$2"
     rm -f "$boomtemp"
@@ -55,7 +108,7 @@ gmboomerang() {
     {% endif -%}
 }
 {% else %}
-# not available in this setup
+# gmboomerang: not available in this setup
 {% endif %}
 
 # easy time range arguments for ffmpeg
@@ -102,7 +155,7 @@ fftimeparse() {
     return 1
 }
 {% else %}
-# not available in this setup
+# fftimeparse: not available in this setup
 {% endif %}
 
 # crop detection using ffmpeg
@@ -113,13 +166,10 @@ ffcropdetect() {
     local opts=()
     local cropdetecttmp=$(mktemp -t cropdetecttmpXXX.txt)
 
-    # -D: remove parsed
-    # -E: don't stop when no match
-    # -K: keep default values when no match
     zparseopts -D -E -K -a opts -test t:=timespec cropdetect:=cropdetect 
     if [[ $# > 1 || -z "${timespec[(r)-t]}" ]]; then
-        cat <<- EOF
-			Usage: ffcropdetect [-cropdetect CDARGS] -t TIMESPEC [--test] INPUT
+        cat >&2 <<- EOF
+			Usage: ffcropdetect [-cropdetect CDARGS] -t TIMESPEC [--test] [--audio] INPUT
 			Auto-detect how INPUT should be cropped to remove surrounding empty space.
 			
 			An ffmpeg video filter argument that can be used to apply that crop will be
@@ -132,6 +182,7 @@ ffcropdetect() {
 			
 			Flags:
 			  --test    Make a test play using the detected crop before exit.
+			  --audio   Playback audio during detection and testing.
 			
 			Optional arguments:
 			  CDARGS    Arguments for the ffmpeg cropdetect filter as a B:R:F triplet.
@@ -145,7 +196,11 @@ ffcropdetect() {
     {# parameter strings need to be split with the (z) expansion flag #}
     local fftimespec=$(fftimeparse $timespec[2])
     local ffcropdetect="-vf cropdetect=$cropdetect[2]"
-    ffplay ${(z)fftimespec} -autoexit -i "$1" ${(z)ffcropdetect} 1>/dev/null 2>"$cropdetecttmp"
+    local ffaudio="-an"
+    if (($opts[(Ie)--audio])); then
+        ffaudio=""
+    fi
+    ffplay ${(z)fftimespec} -autoexit -i "$1" $ffaudio ${(z)ffcropdetect} 1>/dev/null 2>"$cropdetecttmp"
 
     # choose the most popular crop flags
     local cropflags=$(grep -o 'crop=.*$' "$cropdetecttmp" |
@@ -157,12 +212,12 @@ ffcropdetect() {
     {# (Ie): exact match, (I): pattern match #}
     if (($opts[(Ie)--test])); then
         echo "Test play..." >&2
-        ffplay -autoexit -i "$1" -vf $cropflags 1>/dev/null 2>/dev/null
+        ffplay -autoexit -i "$1" $ffaudio -vf $cropflags 1>/dev/null 2>/dev/null
     fi
     return 0
 }
 {% else %}
-# not available in this setup
+# ffcropdetect: not available in this setup
 {% endif %}
 
 # animated gif creation using ffmpeg
@@ -173,20 +228,24 @@ ffmakegif() {
     local cropdetect=""
     local fps=(-fps 10)
     local delay=(-delay 5) #???
-    local scale=(-scale 320)
+    local scale=(-scale 320:-1)
     local opts=()
     local gifpalettetmp=$(mktemp -t gifpalettetmpXXX.txt)
 
-    zparseopts -D -E -K -a opts t:=timespec fps:=fps scale:=scale crop=crop cropdetect:=cropdetect
+    zparseopts -D -E -K -a opts t:=timespec fps:=fps scale:=scale crop:=crop cropdetect:=cropdetect
+    {#
+    echo "source: $1"
+    echo "destination: $2"
     echo "timespec: $timespec"
     echo "fps: $fps"
     echo "scale: $scale"
     echo "crop: $crop"
     echo "cropdetect: $cropdetect"
-
+    echo ""
+    #}
     {# help text needs leading tab spaces - find or make a jinja2 filter to handle this #}
-    if [[ $# > 2 || -z "${timespec[(r)-t]}" ]]; then
-        cat <<- EOF
+    if [[ $# != 2 || -z "${timespec[(r)-t]}" ]]; then
+        cat >&2 <<- EOF
 			Usage: ffmakegif [...] -t TIMESPEC INPUT OUTPUT
 			
 			Mandatory arguments:
@@ -196,21 +255,57 @@ ffmakegif() {
 			
 			Optional arguments:
 			  -fps FPS              Frames per second in the output gif.
-			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...)
-			  -crop                 Enable autocropping.
-			  -cropdetect CDARGS    Arguments for the ffmpeg cropdetect filter. See ffcropdetect.
-			                        Implies -crop.
+			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...).
+			  -cropdetect CDARGS    Enable automatic crop detection on the source.
+			                        See help of ffcropdetect for the CDARGS format, or use
+			                        "default" for autocropping using the defaults.
+			  -crop VFCROP          Manually arguments for the ffmpeg crop video filter.
+			                        The format is: W:H:TOPLEFT_X:TOPLEFT_Y
+			                        Automatic crop detection will be disabled.
 			
 		EOF
         return 1
     fi
+
+    # Set the crop filter arguments.
+    if [ "$crop[2]" != "" ]; then
+        crop="$crop=$crop[2]"
+    elif [ "$cropdetect[2]" = "default" ]; then
+        crop=$(ffcropdetect -t $timespec[2] $1)
+    elif [ "$cropdetect[2]" != "default" ]; then
+        crop=$(ffcropdetect -cropdetect "$cropdetect[2]" -t "$timespec[2]" $1)
+    else
+        crop=""
+    fi
+
+    {#
+    examples:
+    ffmpeg -y -ss 0 -t 5 -i input.mp4 -an -vf crop=... -vf fps=10,scale=320:-1:flags=lanczos,palettegen palette.png
+    ffmpeg -y -ss 0 -t 5 -i input.mp4 -i palette.png -filter_complex "crop=...,fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse" output.gif
+    #}
+    # Set ffmpeg arguments.
+    local fftimespec=$(fftimeparse "$timespec[2]")
+    local ffpalettevf=$(printf "fps=%d,scale=%s:flags=lanczos,palettegen" "$fps[2]" "$scale[2]")
+    local ffgifvf=$(printf "fps=%d,scale=%s:flags=lanczos[x];[x][1:v]paletteuse" "$fps[2]" "$scale[2]")
+    if [ $crop != "" ]; then
+        ffpalettevf="$crop,$ffpalettevf"
+        ffgifvf="$crop,$ffgifvf"
+    fi
+    local palettetemp=$(mktemp -t palettetempXXX.png)
+
+    # create pallette
+    ffmpeg -y ${=fftimespec} -i $1 -vf "$ffpalettevf" $palettetemp
+
+    # create gif
+    ffmpeg -y ${=fftimespec} -i $1 -i $palettetemp -filter_complex "$ffgifvf" $2
+
+    # cleanup
+    rm -f $palettetemp
 }
 {% else %}
-# not available in this setup
+# ffmakegif: not available in this setup
 {% endif %}
 
-#ffmpeg -y -ss 0 -t 5 -i input.mp4 -an -vf crop=... -vf fps=10,scale=320:-1:flags=lanczos,palettegen palette.png
-#ffmpeg -y -ss 0 -t 5 -i input.mp4 -i palette.png -filter_complex "crop=...,fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse" output.gif
 
 # vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
 
