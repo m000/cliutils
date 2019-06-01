@@ -257,8 +257,9 @@ ffmakegif() {
 			  -fps FPS              Frames per second in the output gif.
 			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...).
 			  -cropdetect CDARGS    Enable automatic crop detection on the source.
-			                        See help of ffcropdetect for the CDARGS format, or use
-			                        "default" for autocropping using the defaults.
+			                        Use "default" to use default autocropping arguments.
+			                        Use "none" to skip autocropping.
+			                        Or manually set CDARGS as described in ffcropdetect.
 			  -crop VFCROP          Manually arguments for the ffmpeg crop video filter.
 			                        The format is: W:H:TOPLEFT_X:TOPLEFT_Y
 			                        Automatic crop detection will be disabled.
@@ -272,6 +273,8 @@ ffmakegif() {
         crop="$crop=$crop[2]"
     elif [ "$cropdetect[2]" = "default" ]; then
         crop=$(ffcropdetect -t $timespec[2] $1)
+    elif [ "$cropdetect[2]" = "none" ]; then
+        crop=""
     elif [ "$cropdetect[2]" != "default" ]; then
         crop=$(ffcropdetect -cropdetect "$cropdetect[2]" -t "$timespec[2]" $1)
     else
