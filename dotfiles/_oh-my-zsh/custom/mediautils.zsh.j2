@@ -8,10 +8,13 @@
 # to multiple arguments. When you do need to expand a variable to multiple
 # arguments, use the '=' modifier. Do note however, that any other special
 # characters that may be included in the string, still require quoting!
+# Additionally, a pottentially empty string needs to be quoted.
 # Example:
 #     lsopts="-a -l"
-#     ls $lsopts        # error!!!
-#     ls ${=lsopts}     # runs 'ls -a -l'
+#     ls $lsopts            # error!!!
+#     ls ${=lsopts}         # runs 'ls -a -l'
+#     printf "%s%d" $a 2    # prints '20'
+#     printf "%s%d" "$a" 2  # prints '2'
 #
 # **** zparseopt flags ****
 # -D:    Remove parsed options.
@@ -36,6 +39,29 @@
 # The options are added to the array specied with the -a flag.
 # You can specify another array for some options by appending a '=altarray'
 # at the end of the specifier.
+#
+#
+# ---------------------
+# ffmpeg filter_complex
+# ---------------------
+# filter_complex allows you to specify a filter graph. A filter graph consists of
+# a series of connected filter chains. Finally, filter chains are simple series of
+# filters. Filters can be annotated with labels that allow us to link the chains
+# of the filter graph. The chain separator is ';'. The filter separator is ','.
+# This is a simplified summary of what is described in detail here:
+#     https://ffmpeg.org/ffmpeg-filters.html#Filtergraph-description
+#
+# Example 1:
+#   -filter_complex 'scale=480:-1:flags=spline,hqdn3d,fps=10[x]; [x]palettegen'
+# This is a dummy filter, showing the use of labels. The output of the last filter
+# in the first chain is labeled [x] and is used as an input for the first filter of
+# the second chain.
+#
+# Example 2:
+#   -filter_complex 'scale=480:-1:flags=lanczos[x]; [x]hqdn3d,fps=10[y]; [y][1:v]paletteuse'
+# Here, we have specified 3 chains. What is interesting is that the first filter of the 
+# last chain requires 2 inputs. The first input [y] is one we defined. The second input
+# [1:v] refers to the video stream of the second input file (not shown here).
 #}
 {% if ["gm",] is installed %}
 # git plugin alias conflicts with graphicsmagick
@@ -237,6 +263,7 @@ ffcropdetect() {
 {% endif %}
 
 # animated gif creation using ffmpeg
+# Roughly based on: http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html
 {% if ["ffmpeg",] is installed %}
 ffmakegif() {
     local timespec=""
@@ -245,15 +272,17 @@ ffmakegif() {
     local fps=(-fps 10)
     local delay=(-delay 5) #???
     local scale=(-scale 320:-1)
+    local denoise=(-denoise none)
     local opts=()
     local gifpalettetmp=$(mktemp -t gifpalettetmpXXX.txt)
 
-    zparseopts -D -E -K -a opts t:=timespec fps:=fps scale:=scale crop:=crop cropdetect:=cropdetect
+    zparseopts -D -E -K -a opts t:=timespec fps:=fps scale:=scale crop:=crop cropdetect:=cropdetect denoise:=denoise
     {#
     echo "source: $1"
     echo "destination: $2"
     echo "timespec: $timespec"
     echo "fps: $fps"
+    echo "denoise: $denoise"
     echo "scale: $scale"
     echo "crop: $crop"
     echo "cropdetect: $cropdetect"
@@ -284,39 +313,39 @@ ffmakegif() {
         return 1
     fi
 
-    # Set the crop filter arguments.
+    # Set the crop filter argument. Must end with ',' if not empty.
     if [ "$crop[2]" != "" ]; then
-        crop="$crop=$crop[2]"
+        cropvf="$crop=$crop[2],"
     elif [ "$cropdetect[2]" = "default" ]; then
-        crop=$(ffcropdetect -t $timespec[2] $1)
+        cropvf="$(ffcropdetect -t $timespec[2] $1),"
     elif [ "$cropdetect[2]" = "none" ]; then
-        crop=""
+        cropvf=""
     elif [ "$cropdetect[2]" != "default" ]; then
-        crop=$(ffcropdetect -cropdetect "$cropdetect[2]" -t "$timespec[2]" $1)
+        cropvf="$(ffcropdetect -cropdetect "$cropdetect[2]" -t "$timespec[2]" $1),"
     else
-        crop=""
+        cropvf=""
     fi
 
-    {#
-    examples:
-    ffmpeg -y -ss 0 -t 5 -i input.mp4 -an -vf crop=... -vf fps=10,scale=320:-1:flags=lanczos,palettegen palette.png
-    ffmpeg -y -ss 0 -t 5 -i input.mp4 -i palette.png -filter_complex "crop=...,fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse" output.gif
-    #}
+    # Set the denoise filter arguments. Must end with ',' if not empty.
+    if [ "$denoise[2]" = "default" ]; then
+        denoisevf="hqdn3d,"
+    elif [ "$denoise[2]" = "none" ]; then
+        denoisevf=""
+    else
+        denoisevf="hqdn3d=$denoise[2],"
+    fi
+
     # Set ffmpeg arguments.
     local fftimespec=$(fftimeparse "$timespec[2]")
-    local ffpalettevf=$(printf "fps=%d,scale=%s:flags=lanczos,palettegen" "$fps[2]" "$scale[2]")
-    local ffgifvf=$(printf "fps=%d,scale=%s:flags=lanczos[x];[x][1:v]paletteuse" "$fps[2]" "$scale[2]")
-    if [ $crop != "" ]; then
-        ffpalettevf="$crop,$ffpalettevf"
-        ffgifvf="$crop,$ffgifvf"
-    fi
+    local ffpalettevf=$(printf "%sscale=%s:flags=spline,%sfps=%d[x]; [x]palettegen=stats_mode=diff" "$cropvf" "$scale[2]" "$denoisevf" "$fps[2]")
+    local ffgifvf=$(printf "%sscale=%s:flags=spline[x]; [x]%sfps=%d[y]; [y][1:v]paletteuse=dither=sierra2:diff_mode=rectangle" "$cropvf" "$scale[2]" "$denoisevf" "$fps[2]")
     local palettetemp=$(mktemp -t palettetempXXX.png)
 
-    # create pallette
-    ffmpeg -y ${=fftimespec} -i $1 -vf "$ffpalettevf" $palettetemp
+    # create palette
+    ffmpeg ${=fftimespec} -i $1 -an -filter_complex "$ffpalettevf" -y $palettetemp
 
     # create gif
-    ffmpeg -y ${=fftimespec} -i $1 -i $palettetemp -filter_complex "$ffgifvf" $2
+    ffmpeg ${=fftimespec} -i $1 -i $palettetemp -an -filter_complex "$ffgifvf" -y $2
 
     # cleanup
     rm -f $palettetemp
