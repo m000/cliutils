@@ -158,34 +158,66 @@ gmboomerang() {
 fftimeparse() {
     local mode=""
     local spec=""
-    local specf=""
+    local specf=()
 
-    if [[ $1 =~ '.+\+.+' ]]; then
+    # whole lotta re
+    local re_msec='(\.[[:digit:]]{0,2})?'
+    local re_sec='[[:digit:]]{1,2}'
+    local re_xsec='[[:digit:]]{1,}'
+    local re_mh='([[:digit:]]{0,2}:)?'
+
+    local tfmt1=${re_xsec}${re_msec}
+    local tfmt2=${re_mh}${re_mh}${re_sec}${re_msec}
+    local tfmt='('$tfmt1'|'$tfmt2')'
+
+    {# (s:<string>:) -> force field splitting at string #}
+    # Match timespec 
+    if [[ $1 =~ "^$tfmt\+$tfmt\$" ]]; then
         mode="delta"
         spec=( ${(s:+:)1} )
-    elif [[ $1 =~ '.+\-.+' ]]; then
+    elif [[ $1 =~ "^$tfmt\-$tfmt\$" ]]; then
         mode="range"
         spec=( ${(s:-:)1} )
     fi
 
-{% raw %}
-    if [ "$mode" = "" ] || (( ${#spec} != 2 )); then
+    if [ "$mode" = "" ] || (( {{ '${#spec}' }} != 2 )); then
         cat >&2 <<- EOF
 			Usage: fftimeparse TIMESPEC
 			Convert a simplified TIMESPEC to arguments suitable for specifying
 			a time range to ffmpeg.
 			
 			Supports two TIMESPEC formats:
-			    delta TIMESPEC  <start>+<delta>
-			    range TIMESPEC  <start>-<end>
+			    delta TIMESPEC     <start>+<delta>
+			    range TIMESPEC     <start>-<end>
+
+			The components of the formats may either be:
+			    seconds based      <sec>.<msec>
+			    h/min/sec based    <h>:<min>:<sec>.<msec>
 		EOF
         return 1
     fi
-{% endraw %}
 
-    # cast to numeric
-    specf=( $(( ${spec[1]} )) $(( ${spec[2]} )) )
-
+    # convert specs to seconds for use with ffmpeg
+    for i in {1..{{ '${#spec}' }}}; do
+        local s=$spec[$i]
+        if [[ $s =~ "^$tfmt1\$" ]]; then
+            # just convert sec to numeric value
+            specf[$i]=$(( $s ))
+        elif [[ $s =~ "^$tfmt2\$" ]]; then
+            # convert components to sec and sum
+            local ssum=0
+            local scomponents=( ${(s.:.)s} )
+            for j in {1..{{ '${#scomponents}' }}}; do
+                local factor=$(( 60**({{ '${#scomponents}' }} - $j) ))
+                ssum=$(( $ssum + $scomponents[$j] * $factor ))
+            done
+            specf[$i]=$ssum
+        else
+            # this should never happen
+            $specf[$i]="XXX"
+        fi
+    done
+        
     if [ "$mode" = "delta" ]; then
         printf -- "-ss %.02f -t %.02f\n" ${specf[1]} ${specf[2]}
         return 0
