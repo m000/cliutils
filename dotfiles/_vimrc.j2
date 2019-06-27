@@ -330,3 +330,11 @@ set modelines=2
 " Paste mode toggle
 set pastetoggle=<F3>
 
+" Folding toggle
+nnoremap <space> za
+vnoremap <space> zf
+
+" Auto-save and restore of folding
+autocmd BufWinLeave *.* mkview
+autocmd BufWinEnter *.* silent loadview 
+

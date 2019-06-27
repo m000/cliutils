@@ -14,5 +14,10 @@ syn keyword cppBoolean TRUE FALSE
 " Custom types ****************************************************************
 syn match cType "[a-z][a-z][a-z0-9_]*[a-z0-9]_t\([^a-z0-9_]\)\@="
 
+" Folding *********************************************************************
+setlocal foldmethod=syntax
+setlocal foldnestmax=2
+setlocal foldlevel=2
+
 " vim:ft=vim
 
