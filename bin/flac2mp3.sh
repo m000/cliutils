@@ -52,7 +52,7 @@
 # To force conversion on all or a specific file, run this script without
 # "mtime" at the end. 
 #
-# for f in *.flac; do ~/bin/flac2mp3.sh 0 "$f" "`echo "$f" | sed 's/.flac/.mp3/'`"; done
+# for f in *.flac; do flac2mp3.sh 0 "$f" "${f%%.flac}".mp3; done
 #
 #==============================[ License ]========================================
 #
