@@ -1,0 +1,55 @@
+{% if ["unzip","find"] is installed %}
+opensubtitles-extract() {
+    # Identify zip files adhering to the opensubtitles download format.
+    local subs_re="-regex .*\.([0-9]+)\.zip"
+    local subs=($(find . -maxdepth 1 -type f ${=subs_re}))
+    if [ "$subs" = "" ]; then
+        printf "Could not find any subtitles in current directory.\n" >&2
+        return 1
+    fi
+
+    # Identify the main title in the directory.
+    local main_title_re="-regextype egrep -regex .*\.(mkv|mp4)"
+    local main_title=$(find . -maxdepth 1 -type f ${=main_title_re} -printf "%s:%p\n" |
+        sort -rn | awk -F: 'NR==1 {print $2; exit;}')
+    if [ "$main_title" = "" ]; then
+        printf "Could not find main title in current directory.\n" >&2
+        return 1
+    fi
+
+    # Mappings for language codes and post-process commands.
+    # Post-process commands are expected to operate in-place.
+    typeset -A lang_map
+    lang_map=(eng en ell el dut nl)
+    typeset -A lang_pp
+    lang_pp=(el greek2utf8.sh)
+
+    # Process zip files.
+    for sz in $subs; do
+        # Get language from zip file name.
+        local sz_lang=$(echo "$sz" | grep -Eo '\.[a-z]{2,3}\.' | tr -d .)
+        if [ "$sz_lang" = "" ]; then
+            printf "Skipping '%s'. Could not identify language.\n" "$sz" >&2
+            continue
+        fi
+
+        # Get language to use for the srt file.
+        local srt_lang=${lang_map[$sz_lang]:-$sz_lang}
+
+        # Create output file name and unzip directly to the file.
+        local srt_out=${main_title%.*}.${srt_lang}.srt
+        printf "Extracting subtitle from '%s' to '%s'...\n" "$sz" "$srt_out" 2>&1
+        unzip -p "$sz" '*.srt' > "$srt_out"
+
+        # Post processing.
+        if [ "${lang_pp[$srt_lang]}" != "" ]; then
+            printf "Post-processing '%s'...\n" "$srt_out" 2>&1
+            ${lang_pp[$srt_lang]} "$srt_out"
+        fi
+    done
+}
+{% else %}
+# opensubtitles-extract: not available in this setup
+{% endif %}
+
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
