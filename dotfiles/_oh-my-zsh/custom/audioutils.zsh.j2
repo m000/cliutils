@@ -45,7 +45,8 @@ audiocmp() {
 
 {% if os.type == "osx" and path.music is dir %}
 itunes-import() {
-	find "{{path.music}}" -mindepth 1 -maxdepth 1 -type d -mtime -1d -iname "*$1*" -print -exec open -a iTunes \{\} \;
+	local FIND="/usr/bin/find"
+	$FIND "{{path.music}}" -mindepth 1 -maxdepth 1 -type d -mtime -1d -iname "*$1*" -print -exec open -a iTunes \{\} \;
 }
 {% endif %}
 # vim:ft=sh
