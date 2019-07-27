@@ -102,17 +102,13 @@ gmresize() {
 {% endif %}
 
 # boomerang gifs using graphicsmagic and gifsicle
-{% if ["gm",] is installed %}
+{% if ["gm", "gifsicle"] is installed %}
 gmboomerang() {
     local boomtemp=$(mktemp -t boomtmpXXX.gif)
     local lastframe=$(gm identify "$1" | tail -1 | awk -F'[\\[\\]]' '{ print $2 }')
     local forward_range="0-$lastframe"
-    local reverse_range="$(( $lastframe -1 ))-1"
-    {% if ["gifsicle",] is installed %}
+    local reverse_range="$(( $lastframe - 1 ))-1"
     local frame_delay=${3:-default}
-    {% else %}
-    local frame_delay=${3:-10}
-    {% endif %}
 
     if (( $# < 2 || $# > 3 )); then
         cat >&2 <<- EOF
@@ -128,7 +124,6 @@ gmboomerang() {
         return 1
     fi
 
-    {% if ["gifsicle",] is installed %}
     # get frame delay from source
     if [ $frame_delay = "default" ]; then
         # get delay in sec
@@ -138,16 +133,11 @@ gmboomerang() {
         # convert to 1/100 of sec
         frame_delay=$(printf "%d" $((100 * $frame_delay)))
     fi
-    {% endif %}
 
     gm convert "$1" -coalesce "$boomtemp"
     gm convert -delay "$frame_delay" -loop 0 "$boomtemp"'['"$forward_range"']' "$boomtemp"'['"$reverse_range"']' "$2"
     rm -f "$boomtemp"
-    {% if ["gifsicle",] is installed %}
     gifsicle --batch -O3 "$2"
-    {% else %}
-    echo "Warning: gifsicle not found, output is not optimized." >&2
-    {% endif -%}
 }
 {% else %}
 # gmboomerang: not available in this setup
@@ -296,7 +286,7 @@ ffcropdetect() {
 
 # animated gif creation using ffmpeg
 # Roughly based on: http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html
-{% if ["ffmpeg",] is installed %}
+{% if ["ffmpeg", "gifsicle"] is installed %}
 ffmakegif() {
     local timespec=""
     local crop=""
@@ -308,10 +298,7 @@ ffmakegif() {
     local opts=()
     local gifpalettetmp=$(mktemp -t gifpalettetmpXXX.txt)
 
-    local zparsespec="t:=timespec fps:=fps scale:=scale crop:=crop cropdetect:=cropdetect denoise:=denoise"
-{% if ["gifsicle",] is installed %}
-    zparsespec="$zparsespec delay:=frame_delay"
-{% endif %}
+    local zparsespec="t:=timespec fps:=fps delay:=frame_delay scale:=scale crop:=crop cropdetect:=cropdetect denoise:=denoise"
     zparseopts -D -E -K -a opts ${=zparsespec}
     {#
     echo "source: $1"
@@ -337,12 +324,10 @@ ffmakegif() {
 			
 			Optional arguments:
 			  -fps FPS              Frames per second in the output gif.
-{% if ["gifsicle",] is installed %}
 			  -delay DELAY          Delay between gif frames in 1/100 of sec. By default
 			                        ffmpeg inferes the delay from the fps value, so that
 			                        playback speed is preserved. Manually specifying the
 			                        delay can be used to make gifs run faster/slower.
-{% endif %}
 			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...).
 			  -cropdetect CDARGS    Enable automatic crop detection on the source.
 			                        Use "default" to use default autocropping arguments.
@@ -390,12 +375,10 @@ ffmakegif() {
     # create gif
     ffmpeg ${=fftimespec} -i $1 -i $palettetemp -an -filter_complex "$ffgifvf" -y $2
 
-{% if ["gifsicle",] is installed %}
     if [ "$frame_delay[2]" != "default" ]; then
         # override delay
         gifsicle --batch -O3 --delay "$frame_delay[2]" $2
     fi
-{% endif %}
 
     # cleanup
     rm -f $palettetemp
