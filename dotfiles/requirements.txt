@@ -3,4 +3,4 @@ PyYAML==4.2b1
 MarkupSafe==1.1.1
 shutilwhich==1.1.0
 exdoc==0.0.6.post0
-git+https://github.com/m000/j2cli.git#egg=j2cli
+git+https://github.com/m000/j2cli.git@master#egg=j2cli

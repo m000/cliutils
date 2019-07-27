@@ -4,7 +4,7 @@ MKDIR       = mkdir -vp
 RSYNC       = rsync
 DIFF        = diff
 GREP        = grep
-J2          = j2 -C --undefined=normal
+J2          = j2 -U --filters j2_filters.py --tests j2_tests.py --
 
 # Configuration variables, affecting the processing of templates.
 OUTDIR          = output
