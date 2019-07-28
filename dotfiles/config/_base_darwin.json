@@ -1,0 +1,11 @@
+{
+    "hostid": "The-Shrine-osx",
+    "hostname": "The-Shrine",
+    "os": {
+         "type": "osx"
+    },
+    "path": {
+        "homebrew": "/opt/homebrew",
+        "homebrew_gnubin": ["coreutils", "make", "gnu-tar", "gnu-sed", "findutils"]
+    }
+}

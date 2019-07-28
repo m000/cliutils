@@ -12,14 +12,28 @@ HOSTNAME        = $(shell uname -n)
 HOSTNAME_SHORT  = $(shell uname -n | cut -d. -f1)
 KERNEL          = $(shell uname -s | tr A-Z a-z)
 
-# Choose config file.
-CONFIG          = config/$(HOSTNAME)-$(KERNEL).json
-ifeq ($(realpath $(CONFIG)),)
-CONFIG          = config/$(HOSTNAME_SHORT)-$(KERNEL).json
+# Set base config - optional.
+CONFIG_BASE     = config/_base.json
+ifeq ($(realpath $(CONFIG_BASE)),)
+CONFIG_BASE     =
 endif
+
+# Set os config - optional.
+CONFIG_OS       = config/_base_$(KERNEL).json
+ifeq ($(realpath $(CONFIG_OS)),)
+CONFIG_OS       =
+endif
+
+# Set host config - mandatory.
+CONFIG_HOST     = config/$(HOSTNAME)-$(KERNEL).json
 ifeq ($(realpath $(CONFIG)),)
+CONFIG_HOST     = config/$(HOSTNAME_SHORT)-$(KERNEL).json
+endif
+ifeq ($(realpath $(CONFIG_HOST)),)
 $(error No configuration file for this host)
 endif
+
+CONFIG          = $(CONFIG_BASE) $(CONFIG_OS) $(CONFIG_HOST)
 
 # Make a list of *.j2 files that should be compiled with j2cli.
 RCFILES_IN      = $(shell find _* \( -type f -or -type l \) -iname '*.j2')
