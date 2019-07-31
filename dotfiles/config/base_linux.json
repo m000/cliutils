@@ -1,0 +1,13 @@
+{
+    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
+    "os": {
+        "type": "linux",
+        "flavor": "ubuntu"
+    },
+    "shell": {
+        "use_default_llvm": true
+    },
+    "path": {
+        "java": "/usr/lib/jvm/default-java"
+    }
+}

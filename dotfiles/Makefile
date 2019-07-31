@@ -8,26 +8,26 @@ J2          = j2 -U --filters j2_filters.py --tests j2_tests.py --
 
 # Configuration variables, affecting the processing of templates.
 OUTDIR          = output
-HOSTNAME        = $(shell uname -n)
-HOSTNAME_SHORT  = $(shell uname -n | cut -d. -f1)
+HOSTNAME        = $(shell uname -n | tr A-Z a-z)
+HOSTNAME_SHORT  = $(shell uname -n | cut -d. -f1 | tr A-Z a-z)
 KERNEL          = $(shell uname -s | tr A-Z a-z)
 
 # Set base config - optional.
-CONFIG_BASE     = config/_base.json
+CONFIG_BASE     = config/base.json
 ifeq ($(realpath $(CONFIG_BASE)),)
 CONFIG_BASE     =
 endif
 
 # Set os config - optional.
-CONFIG_OS       = config/_base_$(KERNEL).json
+CONFIG_OS       = config/base_$(KERNEL).json
 ifeq ($(realpath $(CONFIG_OS)),)
 CONFIG_OS       =
 endif
 
 # Set host config - mandatory.
-CONFIG_HOST     = config/$(HOSTNAME)-$(KERNEL).json
+CONFIG_HOST     = config/host_$(KERNEL)_$(HOSTNAME).json
 ifeq ($(realpath $(CONFIG)),)
-CONFIG_HOST     = config/$(HOSTNAME_SHORT)-$(KERNEL).json
+CONFIG_HOST     = config/host_$(KERNEL)_$(HOSTNAME_SHORT).json
 endif
 ifeq ($(realpath $(CONFIG_HOST)),)
 $(error No configuration file for this host)

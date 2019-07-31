@@ -1,0 +1,10 @@
+{
+    "hostid": "wasteland-linux",
+    "hostname": "wasteland",
+    "shell": {
+        "iterm_tmux_integration": true
+    },
+    "path": {
+        "llvm": "$HOME/software/llvm-cpi"
+    }
+}

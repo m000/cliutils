@@ -2,7 +2,6 @@
     "hostid": "The-Shrine-osx",
     "hostname": "The-Shrine",
     "path": {
-        "music": "/Volumes/LaCie/music/nas",
-        "pin": "$HOME/software/pin"
+        "music": "/Volumes/LaCie/music/nas"
     }
 }

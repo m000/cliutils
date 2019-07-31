@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 
+assert sys.version_info >= (2,5), "Need at least Python 2.5."
+if sys.version_info < (3,0):
+    from shutilwhich import which
+else:
+    from shutil import which
+
 ### Tests ###########################################################
 def exists(p):
     ''' Returns true if path p exists.
