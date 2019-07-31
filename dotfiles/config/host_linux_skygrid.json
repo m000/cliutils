@@ -1,18 +1,4 @@
 {
     "hostid": "skygrid-linux",
-    "hostname": "skygrid",
-    "browsers": ["iceweasel", "firefox", "chrome", "chromium", "midori"],
-    "os": {
-        "type": "linux",
-        "flavor": "ubuntu"
-    },
-    "shell": {
-        "ohmyzsh_theme": "gnzh"
-    },
-    "path": {
-        "pin": "$HOME/software/pin",
-        "cliutils": "$HOME/git/cliutils",
-        "ohmyzsh": "$HOME/.oh-my-zsh",
-        "llvm": "$HOME/software/llvm-cpi"
-    }
+    "hostname": "skygrid"
 }
