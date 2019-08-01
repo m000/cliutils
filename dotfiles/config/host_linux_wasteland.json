@@ -2,7 +2,11 @@
     "hostid": "wasteland-linux",
     "hostname": "wasteland",
     "shell": {
-        "iterm_tmux_integration": true
+        "ulimit": {"c": "unlimited"},
+        "iterm_tmux_integration": true,
+        "env": [
+            ["EXTRA_PLUGINS_PATH", "\"$HOME\"/spammer/panda-plugins"]
+        ]
     },
     "path": {
         "llvm": "$HOME/software/llvm-cpi"

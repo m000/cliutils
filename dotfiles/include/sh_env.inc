@@ -99,15 +99,8 @@ fi
 {% endif %}
 
 {{ "Host-specific environment settings for %s" | format(hostid) | hr }}
-{% if hostname in ['debian64', 'skygrid', 'wasteland'] -%}
-ulimit -c unlimited
-{% elif hostname == 'skygrid' -%}
-ulimit -c unlimited
-export EXTRA_PLUGINS_PATH="$HOME"/spammer/panda-plugins
-{% endif %}
-{% if hostname in ['skygrid', 'wasteland'] -%}
-export EXTRA_PLUGINS_PATH="$HOME"/spammer/panda-plugins
-{% endif %}
+{{ macros.cmd_from_dict('ulimit', shell.ulimit) }}
+{{- macros.env_from_list(shell.env) }}
 
 {#-
 # vim:ft=sh

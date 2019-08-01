@@ -1,4 +1,11 @@
 {
     "hostid": "skygrid-linux",
-    "hostname": "skygrid"
+    "hostname": "skygrid",
+    "shell": {
+        "ulimit": {"c": "unlimited"},
+        "iterm_tmux_integration": true,
+        "env": [
+            ["EXTRA_PLUGINS_PATH", "\"$HOME\"/spammer/panda-plugins"]
+        ]
+    }
 }
