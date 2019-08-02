@@ -69,7 +69,7 @@ ZSH_DISABLE_COMPFIX="true"
         {% do plugins.append("\n") -%}
         plugins=({{ plugins|join(" ") }})
         {% if "ssh-agent" in plugins -%}
-            zstyle :omz:plugins:ssh-agent lifetime 10m
+            zstyle :omz:plugins:ssh-agent lifetime 120m
         {% endif %}
     {% endif %}
 {% endwith %}
