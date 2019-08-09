@@ -1,7 +1,7 @@
 #!/bin/bash
 
 while (( "$#" )); do
-    detected=$(chardetect "$1" | awk -F': ' 'NR==1 {print $NF}')
+    detected=$(chardetect "$1" | awk -F': ' 'NR==1 {print $NF}' | tr A-Z a-z)
     if [ "${detected#*utf-8}" != "$detected" ]; then
         printf "'%s' appears to be encoded in %s. Skipping.\n" "$1" "$detected" >&2
         shift
