@@ -27,7 +27,7 @@ opensubtitles-extract() {
     # Process zip files.
     for sz in $subs; do
         # Get language from zip file name.
-        local sz_lang=$(echo "$sz" | grep -Eo '\.[a-z]{2,3}\.' | tr -d .)
+        local sz_lang=$(echo "$sz" | grep -Eo ')\.[a-z]{2,3}\.' | tr -d ').')
         if [ "$sz_lang" = "" ]; then
             printf "Skipping '%s'. Could not identify language.\n" "$sz" >&2
             continue
