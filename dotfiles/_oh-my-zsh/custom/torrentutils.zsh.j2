@@ -1,0 +1,70 @@
+{% if ["torrentcheck"] is installed %}
+# export a torrent from a directory with many torrents
+torrent-export() {
+    # local vars
+    local torrentdir=(-d "{{path.torrentdir|default('.')}}")
+    local pattern=""
+    local outfile=""
+    local grepflags=(-q)
+
+    # argument parsing
+    local zparsespec="d:=torrentdir i"
+    zparseopts -D -E -K -a opts ${=zparsespec}
+    pattern=$1
+    outfile=${2%%.torrent}
+    ((${opts[(Ie)-i]})) && grepflags+=(-i)
+    {#
+    # argument debug
+    echo "opts: $opts"
+    echo "torrentdir: $torrentdir"
+    echo "pattern: $pattern"
+    echo "outfile: $outfile"
+    echo "grepflags: $grepflags"
+    #}
+
+    # help
+    if (( $# != 2 )); then
+        cat >&2 <<- EOF
+			Usage: torrent-export [-d TORRENTDIR] [-i] PATTERN OUTPUT
+			Recursively searches all torrent files in TORRENTDIR for those with name
+			matching PATTERN, and copies them to OUTPUT. If multiple files match, an
+			index number will be added to the name.
+			
+			Mandatory arguments:
+			  PATTERN     Pattern to match in the name field of the torrent.
+			  OUTPUT      Output file. An index and the .torrent suffix may be appended.
+			
+			Optional arguments:
+			  TORRENTDIR  The directory to search for torrents.
+			              The default is: '{{path.torrentdir|default('.')}}'
+			
+			Flags:
+			  -i          Use case-insensitive matching.
+		EOF
+        return 1
+    fi
+
+    printf "Exporting torrents matching pattern '%s' from directory '%s'.\n" "$pattern" "$torrentdir[2]" >&2
+    local lastfound=""
+    local nfound=0
+    find "$torrentdir[2]" -type f -name '*.torrent' | while read t; do
+        local tname=$(torrentcheck -t $t | awk -F' *: ' '/Torrent name/{OFS=""; $1=""; print $0;}')
+        if grep ${=grepflags} "$pattern" <(<<<${tname}); then
+            if (( nfound > 0 )); then
+                cp -v $lastfound $outfile.$(printf "%02d" $(( nfound - 1 ))).torrent
+            fi
+            ((nfound++))
+            lastfound=$t
+        fi
+    done
+    if (( nfound == 1 )); then
+        cp -v $lastfound $outfile.torrent
+    elif (( nfound > 1 )); then
+        cp -v $lastfound $outfile.$(printf "%02d" $(( nfound - 1 ))).torrent
+    fi
+}
+{% else %}
+# torrent-export: not available in this setup
+{% endif %}
+
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
