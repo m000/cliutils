@@ -1,4 +1,10 @@
-# find by file extension
+# calculate a collective hash for all the small files (<20M) in a directory
+function smallfilehash() {
+    find "$1" -type f -size -20M -not -iname '.*' -exec md5sum \{\} \; |
+    awk '{print $1}' | sort -n | md5sum | awk '{print $1}'
+}
+
+# convenience wrapper for finding files by extension
 extfind() {
 	local namecase="i"
 	local nameexp=""
@@ -21,7 +27,6 @@ Reference:
 	http://stackoverflow.com/a/10796467
 	man zshexpn
 #}
-
 }
 
 # vim:ft=sh
