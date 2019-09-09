@@ -1,0 +1,73 @@
+{% if ["dumpe2fs", "debugfs"] is installed %}
+# Checks which files are affected by bad blocks on an ext* filesystem.
+# Bad blocks need to have been registered in advance using something like:
+#	e2fsck -kcc <device>
+e2fs-badfiles() {
+	local DEVNAME="$1"
+	[ -b "$DEVNAME" ] || return 1
+
+	local BADBLOCKS="$(dumpe2fs -b "$DEVNAME" | tr '\n' ' ')"
+	if [ ! -n "$BADBLOCKS" ]; then
+		printf "No bad blocks registered for %s.\n" "$DEVNAME" >&2
+		return 0
+	fi
+
+	INODES="$(debugfs -R "icheck $BADBLOCKS" "$DEVNAME" | awk -F'\t' '
+		NR > 1 { bad_inodes[$2]++; }
+		END {
+			for (inode in bad_inodes) {
+				if (inode == "<block not found>") {
+					printf("%d unallocated bad blocks\n", bad_inodes[inode]) > "/dev/stderr";
+					continue;
+				}
+				printf inode OFS;
+			}
+		}
+	')"
+	if [ ! -n "$INODES" ]; then
+		printf "No bad blocks in use on %s.\n" "$DEVNAME" >&2
+		return 0
+	fi
+
+	debugfs -R "ncheck -c $INODES" "$DEVNAME"
+
+{#
+	Reference: https://unix.stackexchange.com/a/37243/17259
+#}
+}
+{% else %}
+# e2fs-badfiles not available in this setup
+{% endif %}
+
+
+{% if ["osascript"] is installed %}
+# Function to make the computer sleep after X minutes
+sleeptimer() {
+	local minutes="${1:-30}"
+	local seconds=$(( $minutes * 60 ))
+
+	# Trim to integer.
+	seconds=${seconds%.*}
+
+	# Check that timeout is positive.
+	if [[ ! $seconds > 0 ]] then
+		echo >&2 "Sleep timeout evaluates to $seconds. Aborting."
+		return 1
+	fi
+
+	{% if ["gdate"] is installed %}
+	local wakeup="$(gdate --date="+$seconds sec")"
+	echo "Waiting for ${minutes}min. Will sleep at: ${wakeup}"
+	{% else %}
+	echo "Waiting for ${minutes}min."
+	{% endif %}
+	echo "..."
+	sleep "$seconds"
+
+	osascript -e 'tell application "System Events" to sleep'
+}
+{% else %}
+# sleeptimer not available in this setup
+{% endif %}
+
+# vim:ft=sh
