@@ -387,5 +387,36 @@ ffmakegif() {
 # ffmakegif: not available in this setup
 {% endif %}
 
+# video resolution quantizer - tells you what resolution tag to assign to a video
+{% if ["mediainfo", "jq"] is installed %}
+vqres() {
+    # available resolutions
+    local qresolutions=(144 240 360 480 576 720 1080)
+
+    # ratio for assigning values that fall in-between resolutions
+    local partition_ratio=$((1.0/2.0))
+
+    while [ $# -gt 0 ]; do
+        local vheight=$(mediainfo --Output=JSON $1 | jq -r '.media.track[] | select(.["@type"] == "Video") .Height')
+        local qres=${qresolutions[-1]}
+        local rprev=0
+        for r in $qresolutions; do
+            if (( $vheight <= $r )); then
+                if (( $vheight < ($rprev + $partition_ratio*($r - $rprev)) )); then
+                    qres=$rprev
+                else
+                    qres=$r
+                fi
+                break
+            fi
+            rprev=$r
+        done
+        printf "res=%-4d qres=%-4d file=%q\n" $vheight $qres $1 >&2
+        shift
+    done
+}
+{% else %}
+# video-qres: not available in this setup
+{% endif %}
 
 # vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
