@@ -4,6 +4,7 @@
     "shell": {
         "ulimit": {"c": "unlimited"},
         "iterm_tmux_integration": true,
+        "ohmyzsh_theme": "kphoen",
         "env": [
             ["EXTRA_PLUGINS_PATH", "\"$HOME\"/spammer/panda-plugins"]
         ]
