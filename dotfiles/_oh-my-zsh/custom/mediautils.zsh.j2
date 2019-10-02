@@ -21,12 +21,18 @@
 # -E:    Don't stop when no match.
 # -K:    Keep any default values when no match.
 # -a a:  Simple array with matched options. To test for a flag use the index
-#        lookup modifiers ('I' or 'Ie') modifiers, and arithmetic evaluation.
+#        lookup modifiers ('I' or 'Ie'), and arithmetic evaluation.
 #        Example:
 #           if (($a[(Ie)--flag])); then
 #               echo "flag specified"
 #           fi
-# -A A:  Associative array with matched options.
+# -A A:  Associative array with matched options. To test for a flag use the
+#        index lookup modifiers and test for the empty string.
+#        Example:
+#        if [ ! -z $opts[(Ie)--flag] ]; then
+#              echo "flag specified"
+#        fi
+#   
 #
 # **** zparseopt option specifiers ****
 # name       Simple a flag.
