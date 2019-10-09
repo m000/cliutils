@@ -9,6 +9,7 @@ unalias g 2>/dev/null
 unalias gp 2>/dev/null
 unalias ghh 2>/dev/null
 
+# Returns a short hash of the specified repo/commit.
 ghash() {
     local repo
     local rev
@@ -26,6 +27,20 @@ ghash() {
     cd "$repo"
     git rev-parse --short --verify "$rev"
     cd ~-
+}
+
+# Does a fixup of the last n commits.
+# Uses the message of the oldest commit for the resulting commit.
+gfixup() {
+    local n=$(($1))
+    if (( n < 2 )); then
+        printf "%s: nothing to do\n" "$0" >&2
+        return
+    fi
+
+    local m=$(git log --format=%B HEAD~$((n))..HEAD~$((n-1)))
+    git reset --soft HEAD~$((n))
+    git commit -m $m
 }
 
 {% endif %}
