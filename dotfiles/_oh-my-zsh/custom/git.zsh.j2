@@ -43,5 +43,22 @@ gfixup() {
     git commit -m $m
 }
 
+# Inspects modified files and prompts for staging.
+# TODO: Implement using porcelain. https://www.stefanjudis.com/today-i-learned/the-short-version-of-git-status-and-the-close-but-different-porcelain-mode/
+gstagei() {
+    local d=${1:-}
+    local stage_prompt=""
+    local stage
+    # Unstaged files have a leading space in their status line.
+    for f in $(git status -s $d | awk '/^ +M/{print $2}'); do
+        git diff $f;
+        stage_prompt=$(printf "%q: stage this file? " "$f")
+        read -q "stage?$stage_prompt"
+        if [ $stage = "y" ]; then
+            git add $f
+        fi
+        echo ""
+    done
+}
 {% endif %}
 # vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
