@@ -1,0 +1,14 @@
+{
+    "hostid": "mbp13-osx",
+    "hostname": "mbp13",
+    "os": {
+         "type": "osx"
+    },
+    "shell": {
+        "ohmyzsh_theme": "gnzh",
+        "iterm_tmux_integration": true
+    },
+    "path": {
+        "homebrew": "/Users/mstamat/hb"
+    }
+}
