@@ -55,7 +55,7 @@ ZSH_DISABLE_COMPFIX="true"
 
     {#- os-specific plugins #}
     {% if os.type == "osx" %}
-        {% do plugins.extend(["osx", "brew", "terminalapp", "Forklift",]) %}
+        {% do plugins.extend(["osx", "brew", "Forklift",]) %}
     {% elif os.type == "linux" %}
         {% if os.flavor == "debian" %}
             {% do plugins.append("debian") %}
