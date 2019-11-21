@@ -21,11 +21,11 @@ path_expand = lambda p: os.path.expandvars(os.path.expanduser(p)),
 path_join = lambda l: os.path.join(*l)
 
 ### Shell filters ###################################################
-sh_quote = pipes.quote
-sh_which = which
-sh_expand = lambda s: os.path.expandvars(os.path.expanduser(s))
-sh_expanduser = os.path.expanduser
-sh_expandvars = os.path.expandvars
+#sh_quote = pipes.quote
+#sh_which = which
+#sh_expand = lambda s: os.path.expandvars(os.path.expanduser(s))
+#sh_expanduser = os.path.expanduser
+#sh_expandvars = os.path.expandvars
 
 ### Debug filters ###################################################
 debug_type = lambda x: type(x)
