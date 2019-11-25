@@ -339,7 +339,7 @@ ffmakegif() {
 			                        Use "default" to use default autocropping arguments.
 			                        Use "none" to skip autocropping.
 			                        Or manually set CDARGS as described in ffcropdetect.
-			  -crop VFCROP          Manually arguments for the ffmpeg crop video filter.
+			  -crop VFCROP          Manual arguments for the ffmpeg crop video filter.
 			                        The format is: W:H:TOPLEFT_X:TOPLEFT_Y
 			                        Automatic crop detection will be disabled.
 			
@@ -349,7 +349,7 @@ ffmakegif() {
 
     # Set the crop filter argument. Must end with ',' if not empty.
     if [ "$crop[2]" != "" ]; then
-        cropvf="$crop=$crop[2],"
+        cropvf="crop=$crop[2],"
     elif [ "$cropdetect[2]" = "default" ]; then
         cropvf="$(ffcropdetect -t $timespec[2] $1),"
     elif [ "$cropdetect[2]" = "none" ]; then
