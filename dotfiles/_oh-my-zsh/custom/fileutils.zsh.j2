@@ -6,59 +6,68 @@ function smallfilehash() {
 
 # convenience wrapper for finding files by extension
 extfind() {
-	local namecase="i"
-	local nameexp=""
-	local dir="."
+    local namecase="i"
+    local nameexp=""
+    local dir="."
 
-	if [ -d "$1" ]; then
-		dir="$1"
-		shift
-	fi
+    if [ -d "$1" ]; then
+        dir="$1"
+        shift
+    fi
 
-	# construct an array of -name/-iname arguments
-	nameexp=("-${namecase}name *.""$^@")
+    # construct an array of -name/-iname arguments
+    nameexp=("-${namecase}name *.""$^@")
 
-	# join the array with "-o" and split on spaces
-	find "$dir" ${(j: -o :s: :)nameexp}
+    # join the array with "-o" and split on spaces
+    find "$dir" ${(j: -o :s: :)nameexp}
 
 {#
 Reference:
-	http://unix.stackexchange.com/a/258928
-	http://stackoverflow.com/a/10796467
-	man zshexpn
+    http://unix.stackexchange.com/a/258928
+    http://stackoverflow.com/a/10796467
+    man zshexpn
 #}
 }
 
 # create backup of directory
 mkbak() {
 {% if "gtar" is installed %}
-	local TAR=gtar
+    local TAR=gtar
 {% else %}
-	local TAR=tar
+    local TAR=tar
 {% endif %}
-	local u
-	local Y m d j H M
-	date '+%Y %m %d %j %H %M' | read Y m d j H M
+    local prefix suffix
+    local Y m d j H M
+    local tsfile
 
-	if [ "$#" -eq 1 ] && [ -d "$1" ]; then
-		# make filename from the single argument
-		f=$(echo "$1" | tr A-Z\  a-z-)
-	elif [ "$#" -gt 1 ] && [ ! -d "$1" ]; then
-		# treat first argument as filename
-		f="$1"
-		shift
-	else
-		cat >&2 <<-EOF
-		Invalid arguments. Usage:
-		    $0 <dir>
-		    $0 <basename> <dir1> [<dir2> ...]
+    zparseopts -D -E -A opts -fts p:
+
+    if (( $# < 1 )); then
+        cat >&2 <<-EOF
+		Nothing to backup. Usage:
+		    $0 [--fts] [-p <output prefix>] <dir1> [<dir2> ...]
 		EOF
-	fi
+    fi
 
-	# make unique suffix
-	u=$(printf "%d%02d%02d_%04d" "$Y" "$m" "$d" "$(( $H*60 + $M ))")
-	
-	$TAR -zcvf "$f"_$u.tar.gz "$@"
+    # read timestamp components and make unique suffix
+    if [ ! -z $opts[(Ie)--fts] ]; then
+        # use newest file timestamp
+        find $@ -type f -printf '%TY %Tm %Td %Tj %TH %TM %p\n' | sort -rn | head -n 1 | read Y m d j H M tsfile
+    else
+        # use current date timestamp
+        date '+%Y %m %d %j %H %M' | read Y m d j H M
+    fi
+    suffix=$(printf "%d%02d%02d_%04d" "$Y" "$m" "$d" "$(( $H*60 + $M ))")
+
+    if [ ! -z $opts[(Ie)-p] ]; then
+        # use specified prefix
+        prefix=$opts[-p]
+    else
+        # make prefix from arguments
+        prefix=$(echo "$@" | tr A-Z\  a-z-)
+    fi
+
+    $TAR -zcvf "${prefix}_${suffix}.tar.gz" "$@"
 }
 
 # vim:ft=sh
