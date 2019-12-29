@@ -37,7 +37,12 @@ opensubtitles-extract() {
         local srt_lang=${lang_map[$sz_lang]:-$sz_lang}
 
         # Create output file name and unzip directly to the file.
-        local srt_out=${main_title%.*}.${srt_lang}.srt
+        local srt_lang_i=""
+        local srt_out=${main_title%.*}.${srt_lang}${srt_lang_i}.srt
+        while [ -f $srt_out ]; do
+            (( srt_lang_i++ ))
+            srt_out=${main_title%.*}.${srt_lang}${srt_lang_i}.srt
+        done
         printf "Extracting subtitle from '%s' to '%s'...\n" "$sz" "$srt_out" 2>&1
         unzip -p "$sz" '*.srt' > "$srt_out"
 
