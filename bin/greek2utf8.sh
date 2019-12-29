@@ -12,6 +12,7 @@ while (( "$#" )); do
     iconv -f iso8859-7 -t utf-8 < "$1" > "$t"
     sed -i 's/’/Ά/g' "$t"
     mv "$t" "$1"
+    chmod 644 "$1"
     shift
 done
 
