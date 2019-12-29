@@ -70,4 +70,14 @@ sleeptimer() {
 # sleeptimer not available in this setup
 {% endif %}
 
+{% if ["qrencode"] is installed %}
+# Encode a wifi ssid and password in a QR code.
+wifiqr() {
+    qrencode -t ANSI -r <(printf "WIFI:T:WPA;S:%s;P:%s;;" $1 $2)
+}
+{% else %}
+# wifiqr not available in this setup
+{% endif %}
+
+
 # vim:ft=sh
