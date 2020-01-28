@@ -1,0 +1,7 @@
+{
+    "hostid": "salata-linux",
+    "hostname": "salata",
+    "shell": {
+        "ohmyzsh_theme": "steeef"
+    }
+}
