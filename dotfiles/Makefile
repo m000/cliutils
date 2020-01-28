@@ -70,7 +70,7 @@ copy-real: all
 	$(RSYNC) --exclude-from=config/exclude.txt -avPhi $(OUTDIR)/ $(HOME)/
 
 diff: all
-	$(DIFF) --exclude-from=config/exclude.txt -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/[^:]*:" || true
+	LC_ALL=C $(DIFF) --exclude-from=config/exclude.txt -wr $(HOME)/ $(OUTDIR)/ | $(GREP) -v "^Only in $(HOME)/[^:]*:" || true
 
 $(OUTDIR)/.%: _% $(CONFIG)
 	@test -d $(@D) || $(MKDIR) $(@D)
