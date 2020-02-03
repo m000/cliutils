@@ -1,0 +1,32 @@
+[user]
+{% for k, v in gitconfig.user|dictsort %}
+	{{ k }} = {{ v }}
+{% endfor %}
+
+[core]
+{% for k, v in gitconfig.core|dictsort %}
+	{{ k }} = {{ v }}
+{% endfor %}
+
+[github]
+{% for k, v in gitconfig.github|dictsort %}
+	{{ k }} = {{ v }}
+{% endfor %}
+
+[color]
+{% for k, v in gitconfig.color|dictsort %}
+	{{ k }} = {{ v }}
+{% endfor %}
+
+[push]
+	default = simple
+
+[http]
+	sslVerify = false
+
+[filter "lfs"]
+	clean = git-lfs clean %f
+	smudge = git-lfs smudge %f
+	required = true
+
+; vim:ft=dosini

@@ -3,6 +3,21 @@
     "shell": {
         "ohmyzsh_theme": "gnzh"
     },
+    "gitconfig": {
+        "user": {
+            "name": "Manolis Stamatogiannakis",
+            "email": "mstamat@gmail.com"
+        },
+        "github": {
+            "user": "m000"
+        },
+        "core": {
+            "pager": "less -x1,5"
+        },
+        "color": {
+            "ui": "auto"
+        }
+    },
     "path": {
         "pin": "$HOME/software/pin",
         "cliutils": "$HOME/git/cliutils",
