@@ -3,9 +3,10 @@
 " |                              GUI stuff                                    |
 " -----------------------------------------------------------------------------  
 
+" Highlight columns 80+ (may be at odds with lang-specific rules) *************
 highlight OverLength ctermbg=red ctermfg=white guibg=#592929
-match OverLength /\%71v.\+/
-set colorcolumn=71
+match OverLength /\%81v.\+/
+set colorcolumn=81
 
 " OS Specific *****************************************************************
 if has("gui_macvim")

@@ -19,4 +19,10 @@ setlocal foldmethod=syntax
 setlocal foldnestmax=2
 setlocal foldlevel=2
 
+" Highlight column 81 *********************************************************
+let &colorcolumn=81
+
+" Highlight columns 81+ *******************************************************
+" let &colorcolumn=join(range(81,999),",")
+
 " vim:ft=vim
