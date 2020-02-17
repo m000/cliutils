@@ -29,6 +29,37 @@ Reference:
 #}
 }
 
+# apply an on files with extension ext1, depending if their pair with extension ext2 exists
+# the condition can be inversed with flag -v
+extpair() {
+    local prefix ext1 ext2 inv
+    zparseopts -D -E -A opts v=inv
+
+    if (( $# < 4 )); then
+        cat >&2 <<-EOF
+		Nothing to backup. Usage:
+		    $0 [-v] <prefix> <ext1> <ext2> <action...>
+		EOF
+        return 1
+    fi
+
+    prefix="$1"
+    ext1="$2"
+    ext2="$3"
+    shift 3
+
+    for f1 in "${prefix}"*.${ext1}; do
+        f2=${f1%%.${ext1}}.${ext2}
+
+        if [ -e "${f2}" -a "$inv" = "" ]; then
+            $@ ${f1}
+        elif [ ! -e "${f2}" -a "$inv" != "" ]; then
+            $@ ${f1}
+        fi
+    done
+}
+
+
 # create backup of directory
 mkbak() {
 {% if "gtar" is installed %}
