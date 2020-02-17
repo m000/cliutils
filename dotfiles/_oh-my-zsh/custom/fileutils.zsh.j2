@@ -78,6 +78,7 @@ mkbak() {
 		Nothing to backup. Usage:
 		    $0 [--fts] [-p <output prefix>] <dir1> [<dir2> ...]
 		EOF
+        return 1
     fi
 
     # read timestamp components and make unique suffix
