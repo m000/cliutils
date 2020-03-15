@@ -16,11 +16,15 @@ PANDOC		?= pandoc
 ZIP        	?= zip
 MKDIR      	?= mkdir -p
 CP         	?= cp
+MV         	?= mv -f
 RM         	?= rm -f
 RSYNC      	?= rsync
 SPONGE		?= sponge
 GIT			?= git
 GNUPLOT		?= gnuplot
+M4         	?= m4
+DOT        	?= dot
+PDFCROP		?= pdfcrop --margins 0
 
 
 ### Input/Output files ############################################
@@ -51,7 +55,8 @@ BIB_SRC		?= $(wildcard *.bib)
 TEX_AUX		= $(patsubst %.pdf,%.aux,$(@))
 TEX_BBL		= $(patsubst %.pdf,%.bbl,$(@))
 TEX_SUP		?= $(wildcard *.cls *.bst *.sty)
-TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png figures/*.pdf figures/*.eps figures/*.png)
+TEX_DOTFIG  ?= $(wildcard figs/*.dot.m4 figures/*.dot.m4)
+TEX_FIG		?= $(wildcard figs/*.pdf figs/*.eps figs/*.png figures/*.pdf figures/*.eps figures/*.png) $(patsubst %.dot.m4,%.pdf,$(TEX_DOTFIG))
 TEX_CLEAN	?= $(wildcard *.log *.aux *.blg *.bbl *.out *.nav *.snm *.toc *.vrb *.synctex.gz)
 TEX_pdf		= $(patsubst %.tex,%.pdf,$(TEX_SRC))
 
@@ -72,6 +77,17 @@ ZIPEXCLUDE				?=							# EDIT: e.g. "-x v.pdf trip.pdf"
 
 
 ### Recipes #################################################
+%.dot: %.dot.m4
+	$(M4) <  $(<) > $(@)
+
+%.pdf: %.dot
+	$(DOT) -Tpdf $(<) -o $(@)
+	$(PDFCROP) $(@) $(basename $(@)).tmp.pdf
+	$(MV) $(basename $(@)).tmp.pdf $(@)
+
+%.png: %.dot
+	$(DOT) -Tpng $(<) -o $(@)
+
 %.html: %.md
 	$(PANDOC) --standalone --normalize -f markdown-hard_line_breaks -t html5 --self-contained -o $(@) $(<)
 
