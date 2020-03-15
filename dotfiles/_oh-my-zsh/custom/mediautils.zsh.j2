@@ -16,7 +16,7 @@
 #     printf "%s%d" $a 2    # prints '20'
 #     printf "%s%d" "$a" 2  # prints '2'
 #
-# **** zparseopt flags ****
+# **** zparseopts flags ****
 # -D:    Remove parsed options.
 # -E:    Don't stop when no match.
 # -K:    Keep any default values when no match.
@@ -34,8 +34,8 @@
 #        fi
 #   
 #
-# **** zparseopt option specifiers ****
-# name       Simple a flag.
+# **** zparseopts option specifiers ****
+# name       Simple flag.
 # name+      Flag that allows multiple instances (e.g. to increase verbosity).
 # name:      Option with mandatory argument. Two elements added to array.
 # name:-     Option with mandatory argument. Added to array as one element.
@@ -423,7 +423,55 @@ vqres() {
     done
 }
 {% else %}
-# video-qres: not available in this setup
+# vqres: not available in this setup
+{% endif %}
+
+# wrapper for vcsi thumbnailer
+{% if ["vcsi", "mediainfo", "jq"] is installed %}
+vcsi++() {
+    local -a input=(-i "")
+    local -a nthumbs=(-nthumbs 0)
+    local -a ldt=(-ldt 30)
+    local -a fdt=(-fdt 30)
+    local opts=()
+    zparseopts -D -E -K -a opts d i:=input fdt:=fdt ldt:=ldt nthumbs:=nthumbs
+
+    if [ -z $input[2] ]; then
+        printf "No input file specified.\n" >&2
+        return 1
+    fi
+
+    local length t dt
+    local timestamps=()
+    local vcsi_ts
+    local vcsi_defaults
+
+{% if os.type == "osx" -%}
+    local vcsi_fonts="--metadata-font Monaco --timestamp-font Monaco --timestamp-font-size 13"
+{% endif %}
+
+    if (($opts[(Ie)-d])); then
+        vcsi_defaults="-g 3x0 -w 1920 -t -T south -f jpg --quality 85 --template {{path.cliutils}}/handbrake/vcis.j2"
+    fi
+
+    if (( nthumbs[2] > 0 )) then
+        # calculate timestamps as floats representing sec
+        length=$(mediainfo --Output=JSON "$input[2]" | jq -r '.media.track[] | select(.["@type"] == "Video") .Duration')
+        t=$(( length - ldt[2] ))
+        dt=$(( ( t - fdt[2] ) / nthumbs[2] ))
+        while (( t > fdt[2] )); do
+            timestamps+=($t)
+            t=$(( t - dt ))
+        done
+
+        # convert timestamps to min:sec format
+        vcsi_ts="-m $(echo $timestamps | awk '{ for(i=NF; i>0; i--) { t=int($i); printf("%d:%d%s", t/60, t%60, (i == 1) ? "\n" : ","); } }')"
+    fi
+
+    vcsi ${=vcsi_defaults} ${=vcsi_ts} ${=vcsi_fonts} $@ $input[2]
+}
+{% else %}
+# vcsi++: not available in this setup
 {% endif %}
 
 # vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
