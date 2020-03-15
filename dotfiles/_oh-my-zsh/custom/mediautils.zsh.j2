@@ -394,6 +394,7 @@ ffmakegif() {
 {% endif %}
 
 # video resolution quantizer - tells you what resolution tag to assign to a video
+# requires mediainfo>=19 to produce json output (Ubuntu download: https://mediaarea.net/en/MediaInfo/Download/Ubuntu)
 {% if ["mediainfo", "jq"] is installed %}
 vqres() {
     # available resolutions
@@ -417,7 +418,7 @@ vqres() {
             fi
             rprev=$r
         done
-        printf "res=%-4d qres=%-4d file=%q\n" $vheight $qres $1 >&2
+        printf "res=%-4d qres=%-4d file=%q\n" $vheight $qres $1
         shift
     done
 }
