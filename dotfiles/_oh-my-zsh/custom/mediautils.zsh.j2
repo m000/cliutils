@@ -457,11 +457,11 @@ vcsi++() {
     if (( nthumbs[2] > 0 )) then
         # calculate timestamps as floats representing sec
         length=$(mediainfo --Output=JSON "$input[2]" | jq -r '.media.track[] | select(.["@type"] == "Video") .Duration')
-        t=$(( length - ldt[2] ))
-        dt=$(( ( t - fdt[2] ) / nthumbs[2] ))
+        t=$( printf "%0.2f" $(( length - ldt[2] )) )
+        dt=$( printf "%0.2f" $(( ( t - fdt[2] ) / nthumbs[2] )) )
         while (( t > fdt[2] )); do
             timestamps+=($t)
-            t=$(( t - dt ))
+            t=$( printf "%0.2f" $(( t - dt )) )
         done
 
         # convert timestamps to min:sec format
