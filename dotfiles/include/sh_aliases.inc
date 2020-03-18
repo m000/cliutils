@@ -12,21 +12,21 @@ alias nyancat='telnet nyancat.dakko.us'
 alias svnup='svn up --ignore-externals'
 alias ts='date +"%Y-%m-%d %H:%M:%S"'
 alias vi=vim
+{% if 'subl' is installed -%}
+{# on mac: sudo ln -s "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl" /usr/local/bin/ #}
+alias slt="subl -a"
+{% endif %}
 
 {{ "OS-specific aliases for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
 alias ldd='otool -L'
 alias ls='ls --color=tty'
 alias m='make -j $(sysctl -n hw.ncpu)'
-alias slt="open -a 'Sublime Text'"
 alias top='top -o cpu'
 {%- elif os.type == "linux" %}
 {%- if 'xdg-open' is installed -%}
 alias open="xdg-open"
 {% endif -%}
-{% if 'subl' is installed -%}
-alias slt="subl"
-{%- endif -%}
 alias m='make -j $(nproc)'
 {%- elif os.type == "bsd" %}
 alias make=gmake
