@@ -1,0 +1,108 @@
+# Concatenate pdf files using cpdf.
+# The name of each file is stamped on the top of the page.
+{% if ["cpdf", "gs", "pdfinfo", "sponge"] is installed %}
+pdfconcat() {
+    local font="Helvetica"
+    local fontsz="9"
+    local fontcol="white"
+    local boxcol="0.52 0 0.13"
+    local out=""
+    local opts=()
+    zparseopts -D -E -K -a opts o:=out b
+
+    if [[ $# -lt 2 || -z "$out[2]" ]]; then
+        cat >&2 <<- EOF
+			Usage: pdfconcat INPUT1 ... INPUTN -out OUTPUT
+			
+			Mandatory arguments:
+			  INPUT*                Files to process.
+			  -o OUTPUT             File to write the merged output.
+			
+			Optional arguments:
+			  -b                    Add top-level bookmarks for each merged file.
+		EOF
+        return 1
+    fi
+
+    local temp=$(mktemp -d 2>/dev/null || mktemp -d -t 'pdfconcat')
+    local fbase
+    local ftemp
+    local stamped=()
+
+    for f in $*; do
+        fbase=$(basename "$f")
+        ftemp="$temp"/"$fbase"
+
+        # copy and uncrypt file
+        cp -vf "$f" "$ftemp"
+        pdfuncrypt -i "$ftemp"
+
+        # stamp the file with its name
+        cpdf -merge "$ftemp" \
+            AND -top "PH div 80" -relative-to-cropbox -color "$boxcol" \
+                -add-rectangle "PW div 4 PH div 40" \
+            AND -midline -top "PH div 40" -relative-to-cropbox -color "$fontcol" \
+                -font "$font" -font-size "$fontsz" -add-text "${fbase%.*}" \
+            -stdout | sponge "$ftemp"
+
+        stamped+=("$ftemp")
+    done
+
+    local mergeopts=(-remove-duplicate-fonts)
+    if (($opts[(Ie)-b])); then
+        mergeopts+=(-merge-add-bookmarks)
+    fi
+
+    cpdf -merge $mergeopts $stamped AND -clean -o "$out[2]"
+    rm -rvf "$temp"
+}
+{% else %}
+# pdfconcat: not available in this setup
+{% endif %}
+
+# Remove encryption from encrypted pdf using ghostscript to rewrite them.
+# I.e. not proper decryption! Still helpful in many cases.
+{% if ["gs", "pdfinfo", "sponge"] is installed %}
+pdfuncrypt () {
+    local opts=()
+    local out
+    zparseopts -D -E -K -a opts i f
+
+    if (($# < 1)); then
+        cat >&2 <<- EOF
+			Usage: pdfuncrypt [-i] INPUT1 ... INPUTN
+			
+			Mandatory arguments:
+			  INPUT*            Files to process.
+			
+			Optional arguments:
+			  -i                Rewrite the input files in-place.
+			  -f                Force execution even if input is not encrypted.
+		EOF
+        return 1
+    fi
+
+    for f in $*; do
+        if ((! $opts[(Ie)-f])); then
+            if ! pdfinfo "$f" 2>/dev/null | grep -q '^Encrypted:[[:space:]]*yes'; then
+                printf "%s: skipping %q -- not encrypted\n" "$0" "$f" >&2
+                continue
+            fi
+        fi
+
+        if (($opts[(Ie)-i])); then
+            out="$f"
+        else
+            out="${f%.(pdf|PDF)}".uncrypt.pdf
+        fi
+
+        gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=- \
+            -c '3000000 setvmthreshold' \
+            -f "$f" | sponge "$out"
+    done
+}
+{% else %}
+# pdfuncrypt: not available in this setup
+{% endif %}
+
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
