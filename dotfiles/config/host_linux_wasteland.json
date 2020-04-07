@@ -6,7 +6,7 @@
         "iterm_tmux_integration": true,
         "ohmyzsh_theme": "kphoen",
         "env": [
-            ["EXTRA_PLUGINS_PATH", "\"$HOME\"/spammer/panda-plugins"]
+            ["EXTRA_PLUGINS_PATH", "\"$HOME\"/panda.play/panda-plugins"]
         ]
     },
     "path": {
