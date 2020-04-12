@@ -295,8 +295,8 @@ ffcropdetect() {
 {% if ["ffmpeg", "gifsicle"] is installed %}
 ffmakegif() {
     local timespec=""
-    local crop=""
-    local cropdetect=""
+    local crop="none"
+    local cropdetect="none"
     local fps=(-fps 10)
     local frame_delay=(-delay default)
     local scale=(-scale 320:-1)
@@ -337,27 +337,26 @@ ffmakegif() {
 			  -scale SCALE          Arguments for the ffmpeg scaler (scale=...).
 			  -cropdetect CDARGS    Enable automatic crop detection on the source.
 			                        Use "default" to use default autocropping arguments.
-			                        Use "none" to skip autocropping.
+			                        Using "none" skips autocropping.
 			                        Or manually set CDARGS as described in ffcropdetect.
 			  -crop VFCROP          Manual arguments for the ffmpeg crop video filter.
 			                        The format is: W:H:TOPLEFT_X:TOPLEFT_Y
 			                        Automatic crop detection will be disabled.
+			                        Using "none" skips manual cropping.
 			
 		EOF
         return 1
     fi
 
     # Set the crop filter argument. Must end with ',' if not empty.
-    if [ "$crop[2]" != "" ]; then
+    if [ "$crop[2]" != "none" ]; then
         cropvf="crop=$crop[2],"
-    elif [ "$cropdetect[2]" = "default" ]; then
-        cropvf="$(ffcropdetect -t $timespec[2] $1),"
     elif [ "$cropdetect[2]" = "none" ]; then
         cropvf=""
+    elif [ "$cropdetect[2]" = "default" ]; then
+        cropvf="$(ffcropdetect -t $timespec[2] $1),"
     elif [ "$cropdetect[2]" != "default" ]; then
         cropvf="$(ffcropdetect -cropdetect "$cropdetect[2]" -t "$timespec[2]" $1),"
-    else
-        cropvf=""
     fi
 
     # Set the denoise filter arguments. Must end with ',' if not empty.
