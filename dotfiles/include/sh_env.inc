@@ -42,6 +42,12 @@
         {%- do path_env.insert(0, '"$HOMEBREW_GNUBIN"') -%}
     {%- endif -%}
 
+    {#- Homebrew curl -#}
+    {%- if [path.homebrew, 'opt/curl/bin'] | path_join is dir -%}
+        {%- do exports.append(('HOMEBREW_CURLBIN', [path.homebrew, 'opt/curl/bin'] | path_join | sh_quote)) -%}
+        {%- do path_env.insert(0, '"$HOMEBREW_CURLBIN"') -%}
+    {%- endif -%}
+
     {#- Java -#}
     {%- if path.java is dir -%}
         {%- do exports.append(('JAVA_HOME', '"{0}"'.format(path.java))) -%}
@@ -96,6 +102,9 @@ fi
 
 {{ "OS-specific environment settings for %s" | format(os.type) | hr }}
 {% if os.type == "osx" -%}
+{%- if [path.homebrew, 'opt/curl/bin'] | path_join is dir -%}
+export HOMEBREW_FORCE_BREWED_CURL=yes
+{% endif %}
 {% endif %}
 
 {{ "Host-specific environment settings for %s" | format(hostid) | hr }}
