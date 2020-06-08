@@ -42,6 +42,12 @@
         {%- do path_env.insert(0, '"$HOMEBREW_GNUBIN"') -%}
     {%- endif -%}
 
+    {#- Homebrew Ruby -#}
+    {%- if [path.homebrew, 'opt/ruby/bin'] | path_join is dir -%}
+        {%- do exports.append(('HOMEBREW_RUBYBIN', [path.homebrew, 'opt/ruby/bin'] | path_join | sh_quote)) -%}
+        {%- do path_env.insert(0, '"$HOMEBREW_RUBYBIN"') -%}
+    {%- endif -%}
+
     {#- Homebrew curl -#}
     {%- if [path.homebrew, 'opt/curl/bin'] | path_join is dir -%}
         {%- do exports.append(('HOMEBREW_CURLBIN', [path.homebrew, 'opt/curl/bin'] | path_join | sh_quote)) -%}
@@ -104,6 +110,9 @@ fi
 {% if os.type == "osx" -%}
 {%- if [path.homebrew, 'opt/curl/bin'] | path_join is dir -%}
 export HOMEBREW_FORCE_BREWED_CURL=yes
+{% endif %}
+{%- if [path.homebrew, 'opt/openssl@1.1'] | path_join is dir -%}
+export RUBY_CONFIGURE_OPTS="--with-openssl-dir='$(brew --prefix openssl@1.1)'"
 {% endif %}
 {% endif %}
 
