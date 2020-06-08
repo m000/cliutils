@@ -91,10 +91,6 @@ export SVN_EDITOR=vim
 if [ "$LLVM_ROOT" != "" ]; then
     export LD_LIBRARY_PATH="$LLVM_ROOT"/lib:"$LD_LIBRARY_PATH"
 fi
-{%- endif %}
-
-{% if "rbenv" is installed -%}
-eval "$(rbenv init -)"
 {% endif %}
 
 {#
