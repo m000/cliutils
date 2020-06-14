@@ -41,21 +41,19 @@ def reformat_lines(lines, sep, fw, indent=0, extra_space=1, file=sys.stdout):
 ###############################################################################
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Align script for key-value text lines.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            description="Align script for key-value text lines.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("-s", "--sep", default=":", help="separator to use")
-    parser.add_argument(
-        "-i", "--indent", type=int, default=-1, help="indent space width"
-    )
-    parser.add_argument(
-        "-e", "--extra-space", type=int, default=1, help="extra space after separator"
-    )
+    parser.add_argument("-i", "--indent", type=int, default=-1,
+            help="indent space width")
+    parser.add_argument("-e", "--extra-space", type=int, default=1,
+            help="extra space after separator")
     output_mode = parser.add_mutually_exclusive_group()
-    output_mode.add_argument("-o", "--output", default=None, help="output file")
-    output_mode.add_argument(
-        "--in-place", action="store_true", default=False, help="edit input in place"
-    )
+    output_mode.add_argument("-o", "--output", default=None,
+            help="output file")
+    output_mode.add_argument("--in-place", action="store_true", default=False,
+            help="edit input in place")
     parser.add_argument("input", nargs="?", help="input file")
     args = parser.parse_args()
 
