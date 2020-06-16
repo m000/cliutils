@@ -79,5 +79,17 @@ wifiqr() {
 # wifiqr not available in this setup
 {% endif %}
 
+{% if ["tmux"] is installed %}
+# connect or start a remote tmux session in control mode
+tssh() {
+    (( $# < 2 )) && printf "Too few arguments.\n" >&2 && exit 1
+    local host="$1"
+    local session="$2"
+    shift 2
+    ssh "$host" $@ -t $(printf "tmux -CC new-session -AD -s %q" "$session")
+}
+{% else %}
+# tssh not available in this setup
+{% endif %}
 
 # vim:ft=sh
