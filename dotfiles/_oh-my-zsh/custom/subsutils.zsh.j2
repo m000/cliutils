@@ -1,4 +1,4 @@
-{% if ["unzip","find"] is installed %}
+{% if ["unzip", "find"] is installed %}
 opensubtitles-extract() {
     # Identify zip files adhering to the opensubtitles download format.
     local subs_re="-regex .*\.([0-9]+)\.zip"
@@ -51,6 +51,11 @@ opensubtitles-extract() {
             printf "Post-processing '%s'...\n" "$srt_out" 2>&1
             ${lang_pp[$srt_lang]} "$srt_out"
         fi
+
+        {% if ["gsed"] is installed %}
+        # Remove BOM mark.
+        sed -i '1s/^\xEF\xBB\xBF//' "$srt_out"
+        {% endif %}
     done
 }
 {% else %}
