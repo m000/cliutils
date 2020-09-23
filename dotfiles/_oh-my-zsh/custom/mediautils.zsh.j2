@@ -295,8 +295,8 @@ ffcropdetect() {
 {% if ["ffmpeg", "gifsicle"] is installed %}
 ffmakegif() {
     local timespec=""
-    local crop="none"
-    local cropdetect="none"
+    local crop=(-crop none)
+    local cropdetect=(-cropdetect none)
     local fps=(-fps 10)
     local frame_delay=(-delay default)
     local scale=(-scale 320:-1)
