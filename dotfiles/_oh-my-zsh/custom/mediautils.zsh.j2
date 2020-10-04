@@ -473,4 +473,50 @@ vcsi++() {
 # vcsi++: not available in this setup
 {% endif %}
 
+# Matroska subtitles extractor
+# XXX: j2 is always detected, as it is required for creating dotfiles.
+{% if ["jq", "mkvmerge", "j2"] is installed %}
+mkv-subextract() {
+    # j2 selector for mkvmerge output
+    local jqcmd_srt='{
+        "filename":.file_name,
+        "subs": .tracks[] |
+            select(.type == "subtitles" and (.codec | test("^SubRip"))) |
+            {id, "lang": .properties.language, "encoding": .properties.encoding}
+    }'
+
+    # map from 3-letter country codes used by matroska to 2-letter language codes
+    local j2langmap='{"langmap": {"dan": "dk", "dut": "nl", "eng": "en", "fin": "fi", "ger": "de", "gre": "el", "fre": "fr", "nor": "no", "spa": "es", "swe": "se"}}'
+
+    {%- raw %}
+    # formats for the extraction and info command
+    local j2fmt_args_srt='tracks {{filename|sh_quote}} {{subs.id}}:{{filename[:-4]}}.{{langmap[subs.lang]|default(subs.lang)}}.srt'
+    local j2fmt_out_srt='{{filename[:-4]}}.{{langmap[subs.lang]|default(subs.lang)}}.srt'
+    {% endraw %}
+
+    # loop locals
+    local nsubs
+    local subextract_args
+    local subextract_out
+
+    for f in $@; do
+        nsubs=0
+        printf "Processing %q:\n" "$f" >&2
+        mkvmerge -J "$f" | jq -c "$jqcmd_srt" | while read subjson; do
+            ((nsubs++))
+            subextract_out=$(j2 -f json <(echo "$j2fmt_out_srt") <(echo "$subjson") <(echo "$j2langmap"))
+            subextract_args=$(j2 -f json <(echo "$j2fmt_args_srt") <(echo "$subjson") <(echo "$j2langmap"))
+            printf "\t(%d) %q\n" "$nsubs" "$subextract_out" >&2
+            mkvextract ${=subextract_args}
+        done
+        if (( nsubs == 0 )); then
+            printf "\tno srt subtitles\n" >&2
+        fi
+    done
+}
+{% else %}
+# mkv-subextract: not available in this setup
+{% endif %}
+
+
 # vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
