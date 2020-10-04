@@ -102,4 +102,14 @@ mkbak() {
     $TAR -zcvf "${prefix}_${suffix}.tar.gz" "$@"
 }
 
+# remove BOM marker from UTF-8 files
+utf8-debom() {
+{% if "gsed" is installed %}
+    local SED=gsed
+{% else %}
+    local SED=sed
+{% endif %}
+    $SED -i '1s/^\xEF\xBB\xBF//' $@
+}
+
 # vim:ft=sh
