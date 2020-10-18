@@ -67,22 +67,43 @@ mkbak() {
 {% else %}
     local TAR=tar
 {% endif %}
+{% if "gsed" is installed %}
+    local SED=gsed
+{% else %}
+    local SED=sed
+{% endif %}
+    local -a opts=(-keep 0)
     local prefix suffix
     local Y m d j H M
     local tsfile
 
-    zparseopts -D -E -A opts -fts p:
+    zparseopts -D -E -K -A opts -T -keep: p:
 
     if (( $# < 1 )); then
         cat >&2 <<-EOF
 		Nothing to backup. Usage:
-		    $0 [--fts] [-p <output prefix>] <dir1> [<dir2> ...]
+		    $0 [-p BAKPREFIX] [-T] [--keep NKEEP] FILE1 [FILE2 ...]
+
+			Mandatory arguments:
+			  TIMESPEC    Time specification, suitable for fftimeparse.
+			  INPUT       File to process.
+			  OUTPUT      File to write the gif output.
+			
+			Optional arguments:
+			  -p BAKPREFIX          Use the specified prefix for the backup file.
+			                        The default is to create one from the file list to
+			                        be backed up, after applying some normalizations.
+			  -T                    Use the most recent file timestamp as the suffix of
+			                        the backup file. The default is to use the current
+			                        date/time.
+			  --keep NKEEP          Keep the NKEEP most recent backup files with the
+			                        current prefix. The default is 0 (i.e. keep all).
 		EOF
         return 1
     fi
 
     # read timestamp components and make unique suffix
-    if [ ! -z $opts[(Ie)--fts] ]; then
+    if [ ! -z $opts[(Ie)-T] ]; then
         # use newest file timestamp
         find $@ -type f -printf '%TY %Tm %Td %Tj %TH %TM %p\n' | sort -rn | head -n 1 | read Y m d j H M tsfile
     else
@@ -96,10 +117,25 @@ mkbak() {
         prefix=$opts[-p]
     else
         # make prefix from arguments
-        prefix=$(echo "$@" | tr A-Z\  a-z-)
+        prefix=$(echo "$@" | $SED -E 's%\./?%%g' | tr A-Z/\  a-z_-)
     fi
 
+    # create archive
     $TAR -zcvf "${prefix}_${suffix}.tar.gz" "$@"
+
+    if [ $? = 0 ]; then
+        printf "Created backup file %q.\n" \
+            "${prefix}_${suffix}.tar.gz" >&2
+
+        if (( opts[--keep] > 0 )); then
+            printf "Cleanup. Keeping last %d backups matching %s.\n" \
+                $opts[--keep] "${prefix}_*.tar.gz" >&2
+            find . -maxdepth 1 -type f -iname "${prefix}_*.tar.gz" |
+                sort -n | head -n $((-opts[--keep])) | xargs -r rm -v
+        fi
+    else
+        return 2
+    fi
 }
 
 # remove BOM marker from UTF-8 files
@@ -112,4 +148,4 @@ utf8-debom() {
     $SED -i '1s/^\xEF\xBB\xBF//' $@
 }
 
-# vim:ft=sh
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
