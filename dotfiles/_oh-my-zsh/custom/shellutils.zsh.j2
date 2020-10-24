@@ -1,0 +1,69 @@
+{#
+# ------------
+# zsh quickref
+# ------------
+#
+# **** Variable expansion ****
+# In zsh, variables containing spaces do not need to be quoted to avoid
+# splitting to multiple arguments.
+# Do note however, that apart from spaces, any special characters in the
+# variable still require quoting!
+# Additionally, a pottentially empty string needs to be quoted.
+#
+# When you do need to split a variable into an arguments list use the
+# '=' modfier. If the variable contains quoted parts, you need to combine
+# the '(z)' and '(Q)' modifiers.
+#
+# Examples:
+#     lsopts="-a -l"
+#     lsfoobar="ls -al './foo bar.txt'"
+#     ls $lsopts            # error!!!
+#     ls ${=lsopts}         # runs: ls -a -l
+#     $lsfoobar             # error!!! whole variable used as executable.
+#     ${=lsfoobar}          # error!!! runs: ls -al "'./foo" "bar.txt'"
+#     ${(z)lsfoobar}        # error!!! runs: ls -al "'./foo bar.txt'"
+#     ${(Q)${(z)lsfoobar}}  # runs: ls -al "./foo bar.txt"
+#     printf "%s%d" $a 2    # prints '20'
+#     printf "%s%d" "$a" 2  # prints '2'
+#
+# **** zparseopts flags ****
+# -D:    Remove parsed options.
+# -E:    Don't stop when no match.
+# -K:    Keep any default values when no match.
+# -a a:  Simple array with matched options. To test for a flag use the index
+#        lookup modifiers ('I' or 'Ie'), and arithmetic evaluation.
+#        Example:
+#           if (($a[(Ie)--flag])); then
+#               echo "flag specified"
+#           fi
+# -A A:  Associative array with matched options. To test for a flag use the
+#        index lookup modifiers and test for the empty string.
+#        Example:
+#        if [ ! -z $opts[(Ie)--flag] ]; then
+#              echo "flag specified"
+#        fi
+#   
+#
+# **** zparseopts option specifiers ****
+# name       Simple flag.
+# name+      Flag that allows multiple instances (e.g. to increase verbosity).
+# name:      Option with mandatory argument. Two elements added to array.
+# name:-     Option with mandatory argument. Added to array as one element.
+# name+:     Same as name:, only allow multiple instances of the option.
+# name+:-    Same as name:-, only allow multiple instances of the option.
+#
+# The options are added to the array specied with the -a flag.
+# You can specify another array for some options by appending a '=altarray'
+# at the end of the specifier.
+#}
+
+# debug function - show how arguments have been expanded
+function debug-args() {
+    local i=1
+    while [ "$1" != "" ]; do
+        echo $((i++)) "$1"
+        shift
+    done
+}
+
+# vim: ft=zsh expandtab ts=4 sts=4 sw=4 :
