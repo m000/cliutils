@@ -72,7 +72,7 @@ mkbak() {
 {% else %}
     local SED=sed
 {% endif %}
-    local -a opts=(-keep 0)
+    local -A opts=(-keep 0)
     local prefix suffix
     local Y m d j H M
     local tsfile
