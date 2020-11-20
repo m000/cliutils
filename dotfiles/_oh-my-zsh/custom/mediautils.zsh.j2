@@ -437,19 +437,21 @@ mkv-subextract() {
             {id, "codec": .codec, "lang": .properties.language, "encoding": .properties.encoding}
     }'
 
-    # maps used to expand commands:
+    # Additional context used to expand commands:
     #     langmap: maps 3-letter country codes used by matroska to 2-letter language codes
     #     extmap: maps subtitle codec name to a file extension
-    local j2maps='{
+    #     langnum: number string used to discriminate different subs in the same language
+    local j2context='{
         "langmap": {"dan": "dk", "dut": "nl", "eng": "en", "fin": "fi", "ger": "de", "gre": "el", "fre": "fr", "nor": "no", "spa": "es", "swe": "se"},
-        "extmap": {"SubRip": "srt", "VobSub": "sub"}
+        "extmap": {"SubRip/SRT": "srt", "VobSub": "sub"},
+        "langnum": ""
     }'
 
     {%- raw %}
     # formats for the extraction and info command
     local j2_vars_fmt='
         {%- set subout -%}
-        {{filename[:-4]}}.{{langmap[subs.lang]|default(subs.lang)}}.{{extmap[subs.codec]}}
+        {{filename[:-4]}}.{{langmap[subs.lang]|default(subs.lang)}}{{langnum|default("")}}.{{extmap[subs.codec]}}
         {%- endset -%}
     '
     local j2_subextract_fmt="$j2_vars_fmt""tracks {{filename|sh_quote}} {{subs.id}}:{{subout|sh_quote}}"
@@ -458,6 +460,7 @@ mkv-subextract() {
 
     # loop locals
     local nsubs
+    local langnum
     local subname
     local subextract_cmd
 
@@ -466,8 +469,17 @@ mkv-subextract() {
         nsubs=0
         mkvmerge -J "$f" | jq -c "$jqcmd_srt" | while read subjson; do
             ((nsubs++))
-            subname=$(j2 -f json <(echo "$j2_subname_fmt") <(echo "$subjson") <(echo "$j2maps"))
-            subextract_cmd=$(j2 -f json <(echo "$j2_subextract_fmt") <(echo "$subjson") <(echo "$j2maps"))
+            langnum=0
+            while true; do
+                subname=$(j2 -f json <(echo "$j2_subname_fmt") <(echo "$subjson") <(echo "$j2context"))
+                if [ -f "$subname" ]; then
+                    (( langnum++ ))
+                    j2context=$(jq -s '.[0] * .[1]' <(echo "$j2context") <(printf '{"langnum": "%d"}' "$langnum"))
+                    continue
+                fi
+                break
+            done
+            subextract_cmd=$(j2 -f json <(echo "$j2_subextract_fmt") <(echo "$subjson") <(echo "$j2context"))
             printf "\t(%d) %s\n" "$nsubs" "$subname" >&2
             mkvextract ${(Q)${(z)subextract_cmd}}
         done
