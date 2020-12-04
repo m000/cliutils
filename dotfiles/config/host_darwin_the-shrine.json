@@ -2,6 +2,7 @@
     "hostid": "The-Shrine-osx",
     "hostname": "The-Shrine",
     "path": {
+        "homebrew": "/opt/brew",
         "music": "/Volumes/LaCie/music/nas",
         "torrentdir": "$HOME/Library/Application Support/qBittorrent/BT_backup"
     }
