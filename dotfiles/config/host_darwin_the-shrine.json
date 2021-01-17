@@ -5,5 +5,8 @@
         "homebrew": "/opt/brew",
         "music": "/Volumes/LaCie/music/nas",
         "torrentdir": "$HOME/Library/Application Support/qBittorrent/BT_backup"
+    },
+    "shell": {
+        "ohmyzsh_theme": "arrow"
     }
 }
