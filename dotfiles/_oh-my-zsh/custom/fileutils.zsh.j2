@@ -77,7 +77,7 @@ mkbak() {
     local Y m d j H M
     local tsfile
 
-    zparseopts -D -E -K -A opts -T -keep: p:
+    zparseopts -D -E -K -A opts T -keep: p:
 
     if (( $# < 1 )); then
         cat >&2 <<-EOF
