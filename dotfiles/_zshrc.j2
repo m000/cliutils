@@ -120,6 +120,11 @@ ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX={{ shell.iterm_tmux_integration | bool 
 source "$HOME/.iterm2_shell_integration.zsh"
 {% endif %}
 
+{% if path.z is file %}
+### z - https://github.com/rupa/z
+source {{ path.z | sh_quote }}
+{%- endif %}
+
 {#
 # vim:ft=sh
 #}

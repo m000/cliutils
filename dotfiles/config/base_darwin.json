@@ -6,6 +6,7 @@
     },
     "path": {
         "homebrew": "/opt/homebrew",
-        "homebrew_gnubin": ["coreutils", "make", "gnu-tar", "gnu-sed", "findutils"]
+        "homebrew_gnubin": ["coreutils", "make", "gnu-tar", "gnu-sed", "findutils"],
+        "z": "/opt/brew/etc/profile.d/z.sh"
     }
 }

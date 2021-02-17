@@ -32,6 +32,11 @@ function vlc_stream_audio() {
 . "$HOME"/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true
 {% endif %}
 
+{% if path.z is file %}
+### z - https://github.com/rupa/z
+source {{ path.z | sh_quote }}
+{%- endif %}
+
 {#
 # vim:ft=sh
 #}
