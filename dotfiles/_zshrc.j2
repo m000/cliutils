@@ -53,6 +53,11 @@ ZSH_DISABLE_COMPFIX="true"
     {% do plugins.extend(["history", "dirhistory", "last-working-dir", "jump", lsep,]) %}
     {% do plugins.extend(["catimg", "encode64", "urltools", "web-search", lsep,]) %}
 
+    {#- tool-specific plugins #}
+    {% if path.golang is dir -%}
+        {% do plugins.append("golang") %}
+    {% endif %}
+
     {#- os-specific plugins #}
     {% if os.type == "osx" %}
         {% do plugins.extend(["osx", "brew", "Forklift",]) %}

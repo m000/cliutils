@@ -22,6 +22,16 @@
         {%- do path_env.insert(0, '"$LLVM_ROOT/bin"') -%}
     {%- endif -%}
 
+    {#- Go -#}
+    {%- if path.golang is dir -%}
+        {%- do exports.append(('GOLANG_ROOT', '"{0}"'.format(path.golang))) -%}
+        {%- do path_env.append('"$GOLANG_ROOT"') -%}
+    {%- endif -%}
+    {%- if path.golang_workspace is dir -%}
+        {%- do exports.append(('GOPATH', '"{0}"'.format(path.golang_workspace))) -%}
+        {%- do path_env.append('"$GOPATH/bin"') -%}
+    {%- endif -%}
+
     {#- Homebrew -#}
     {%- if path.homebrew is dir -%}
         {%- do exports.append(('HOMEBREW_PATH', '"{0}/bin":"{0}/sbin":"{0}/share/npm/bin"'.format(path.homebrew))) -%}
