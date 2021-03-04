@@ -1,0 +1,14 @@
+{
+    "hostid": "wl757g793-linux",
+    "hostname": "wl757g793",
+    "shell": {
+        "ulimit": {"c": "unlimited"},
+        "iterm_tmux_integration": false,
+        "ohmyzsh_theme": "kphoen",
+        "env": [
+            ["EXTRA_PLUGINS_PATH", "\"$HOME\"/panda.play/panda-plugins"]
+        ]
+    },
+    "path": {
+    }
+}
