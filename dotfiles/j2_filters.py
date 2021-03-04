@@ -18,7 +18,7 @@ else:
 path_basename = os.path.basename
 path_dirname = os.path.dirname
 path_expand = lambda p: os.path.expandvars(os.path.expanduser(p)),
-path_join = lambda l: os.path.join(*l)
+path_join = lambda l: None if not all(l) else os.path.join(*l)
 
 ### Shell filters ###################################################
 #sh_quote = pipes.quote
